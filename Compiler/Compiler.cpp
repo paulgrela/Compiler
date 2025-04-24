@@ -4,6 +4,7 @@
 
 #include "Types.h"
 #include "Constants.h"
+#include "VirtualMachine.h"
 #include "LexicalAnalysisTokensGenerator.h"
 #include "ParserToVirtualCodeGenerator.h"
 #include "VirtualCodePrinter.h"
@@ -41,6 +42,8 @@ int main(int argc, char* argv[])
 
     IntelAssemblerCodeGenerator IntelAssemblerCodeGeneratorObject(argv[num_file], ParserToVirtualCodeGeneratorObject.GeneratedVirtualCode, ParserToVirtualCodeGeneratorObject.NumberOfGeneratedVirtualCodeCommands, ParserToVirtualCodeGeneratorObject.StartAddressOfProgram, LexicalAnalysisTokensGeneratorObject.NumericCodeToStringSymbolsMap, LexicalAnalysisTokensGeneratorObject.ListOfConstantStrings, ParserToVirtualCodeGeneratorObject.ExternData, ParserToVirtualCodeGeneratorObject.PublicData, ParserToVirtualCodeGeneratorObject.GlobalData);
     IntelAssemblerCodeGeneratorObject.PrintIntelAssemblerCodeToFile();
+
+    test();
 
     return 0;
 }

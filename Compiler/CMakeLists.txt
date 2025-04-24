@@ -72,6 +72,8 @@ add_executable(
 	VirtualCodePrinter.h
 	IntelAssemblerCodeGenerator.h
 	IntelAssemblerCodeGenerator.cpp
+	VirtualMachine.cpp
+	VirtualMachine.h
 	Compiler.cpp)
 
 #if(USING_MODULES STREQUAL "TRUE")

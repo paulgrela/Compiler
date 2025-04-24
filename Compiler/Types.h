@@ -225,6 +225,8 @@ enum class VirtualCommandName : UnsignedInt
     NUL,
     NOP,
     NTH,
+    END,
+    RET,
 };
 
 enum class VirtualCommandDataType : SignedInt
@@ -292,18 +294,18 @@ enum class VirtualCommandOperationType : SignedInt
     BITXOR = 217
 };
 
-
 struct VirtualCodeCommand
 {
     VirtualCommandName CommandName;
-    RealType Value;
-    VirtualCommandDataType Type;
     VirtualCommandOperationType Operation;
+    VirtualCommandDataType Type;
+    RealType Value;
     SignedInt Kind;
     UnsignedInt Level;
     UnsignedInt Index;
     UnsignedInt Inside;
     UnsignedInt LabelAddress;
+    UnsignedInt TargetAddress;
 };
 
 struct LabelDefinition
