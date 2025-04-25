@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
     IntelAssemblerCodeGenerator IntelAssemblerCodeGeneratorObject(argv[num_file], ParserToVirtualCodeGeneratorObject.GeneratedVirtualCode, ParserToVirtualCodeGeneratorObject.NumberOfGeneratedVirtualCodeCommands, ParserToVirtualCodeGeneratorObject.StartAddressOfProgram, LexicalAnalysisTokensGeneratorObject.NumericCodeToStringSymbolsMap, LexicalAnalysisTokensGeneratorObject.ListOfConstantStrings, ParserToVirtualCodeGeneratorObject.ExternData, ParserToVirtualCodeGeneratorObject.PublicData, ParserToVirtualCodeGeneratorObject.GlobalData);
     IntelAssemblerCodeGeneratorObject.PrintIntelAssemblerCodeToFile();
 
-    test();
+    TestVirtualMachine();
 
     return 0;
 }

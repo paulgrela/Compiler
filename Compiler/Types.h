@@ -227,6 +227,7 @@ enum class VirtualCommandName : UnsignedInt
     NTH,
     END,
     RET,
+    PRINT
 };
 
 enum class VirtualCommandDataType : SignedInt

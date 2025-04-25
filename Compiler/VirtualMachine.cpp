@@ -13,155 +13,180 @@
 class VirtualMachine
 {
 private:
-    std::vector<VirtualCodeCommand> program;
-    std::stack<double> stack;
-    std::unordered_map<int, double> memory;
-    int pc = 0;
-    bool running = true;
-
-    void performOperation(VirtualCommandOperationType op)
+    std::stack<RealType> VirtualMachineStack;
+    std::unordered_map<UnsignedInt, RealType> VirtualMachineMemory;
+private:
+    std::vector<VirtualCodeCommand> ProgramCodeCommandsList;
+    UnsignedInt RunningVirtualCommandIndex = 0;
+    bool ProgramRunning = true;
+private:
+    void PerformOperation(const VirtualCommandOperationType& OperationType)
     {
-        double b = stack.top();
-        stack.pop();
-        double a = (op != VirtualCommandOperationType::NEG) ? stack.top() : 0;
+        const auto R2 = VirtualMachineStack.top();
 
-        if (op != VirtualCommandOperationType::NEG)
-            stack.pop();
+        VirtualMachineStack.pop();
 
-        double result = 0;
-        switch (op)
+        const auto R1 = (OperationType != VirtualCommandOperationType::NEG) ? VirtualMachineStack.top() : 0;
+
+        if (OperationType != VirtualCommandOperationType::NEG)
+            VirtualMachineStack.pop();
+
+        RealType Result = 0;
+        switch (OperationType)
         {
-            case VirtualCommandOperationType::ADD: result = a + b; break;
-            case VirtualCommandOperationType::SUB: result = a - b; break;
-            case VirtualCommandOperationType::MUL: result = a * b; break;
-            case VirtualCommandOperationType::DIV: result = a / b; break;
-            case VirtualCommandOperationType::MOD: result = std::fmod(a, b); break;
-            case VirtualCommandOperationType::NEG: result = -b; break;
-            case VirtualCommandOperationType::EQU: result = (a == b) ? 1 : 0; break;
-            case VirtualCommandOperationType::NEQ: result = (a != b) ? 1 : 0; break;
-            case VirtualCommandOperationType::LT: result = (a < b) ? 1 : 0; break;
-            case VirtualCommandOperationType::GT: result = (a > b) ? 1 : 0; break;
-            case VirtualCommandOperationType::LE: result = (a <= b) ? 1 : 0; break;
-            case VirtualCommandOperationType::GE: result = (a >= b) ? 1 : 0; break;
+            case VirtualCommandOperationType::ADD: Result = R1 + R2; break;
+            case VirtualCommandOperationType::SUB: Result = R1 - R2; break;
+            case VirtualCommandOperationType::MUL: Result = R1 * R2; break;
+            case VirtualCommandOperationType::DIV: Result = R1 / R2; break;
+            case VirtualCommandOperationType::NEG: Result = -R2; break;
+            case VirtualCommandOperationType::MOD: Result = std::fmod(R1, R2); break;
+            case VirtualCommandOperationType::EQU: Result = (R1 == R2) ? 1 : 0; break;
+            case VirtualCommandOperationType::NEQ: Result = (R1 != R2) ? 1 : 0; break;
+            case VirtualCommandOperationType::LT: Result = (R1 < R2) ? 1 : 0; break;
+            case VirtualCommandOperationType::GT: Result = (R1 > R2) ? 1 : 0; break;
+            case VirtualCommandOperationType::LE: Result = (R1 <= R2) ? 1 : 0; break;
+            case VirtualCommandOperationType::GE: Result = (R1 >= R2) ? 1 : 0; break;
+            default: break;
         }
-        stack.push(result);
+        VirtualMachineStack.push(Result);
     }
 
-    void executeInstruction(const VirtualCodeCommand& instr)
+    void ExecuteVirtualCommand(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
-        switch (instr.CommandName)
+        switch (VirtualCodeCommandToExecute.CommandName)
         {
-            case VirtualCommandName::LDC:
-                stack.push(instr.Value);
-                break;
+            case VirtualCommandName::LDC: LoadConstantToStack(VirtualCodeCommandToExecute); break;
+            case VirtualCommandName::LDV: LoadVariableToStack(VirtualCodeCommandToExecute); break;
+            case VirtualCommandName::SVV: SaveValueFromStackToVariable(VirtualCodeCommandToExecute); break;
+            case VirtualCommandName::OPR: PerformOperation(VirtualCodeCommandToExecute.Operation); break;
+            case VirtualCommandName::CALL: Call(VirtualCodeCommandToExecute); break;
+            case VirtualCommandName::RET: Return(VirtualCodeCommandToExecute); break;
+            case VirtualCommandName::JMP: Jump(VirtualCodeCommandToExecute); break;
+            case VirtualCommandName::JCON: JumpConditional(VirtualCodeCommandToExecute); break;
+            case VirtualCommandName::END: ProgramRunning = false; break;
+            case VirtualCommandName::PRINT: PrintMemory(); break;
 
-            case VirtualCommandName::LDV:
-                stack.push(memory[instr.TargetAddress]);
-                break;
-
-            case VirtualCommandName::SVV:
-                memory[instr.TargetAddress] = stack.top();
-                stack.pop();
-                break;
-
-            case VirtualCommandName::OPR:
-                performOperation(instr.Operation);
-                break;
-
-            case VirtualCommandName::CALL:
-                stack.push(pc);
-                pc = instr.TargetAddress;
-                break;
-
-            case VirtualCommandName::RET:
-                pc = static_cast<int>(stack.top());
-                stack.pop();
-                break;
-
-            case VirtualCommandName::JMP:
-                pc = instr.TargetAddress;
-                break;
-
-            case VirtualCommandName::JCON:
-                if (stack.top() != 0)
-                    pc = instr.TargetAddress;
-                stack.pop();
-                break;
-
-            case VirtualCommandName::END:
-                running = false;
-                break;
-
-            default:
-                throw std::runtime_error("Unknown instruction.");
+            default: throw std::runtime_error("Unknown instruction.");
         }
     }
+private:
+
+    void LoadConstantToStack(const VirtualCodeCommand& VirtualCodeCommandToExecute)
+    {
+        VirtualMachineStack.push(VirtualCodeCommandToExecute.Value);
+    }
+
+    void LoadVariableToStack(const VirtualCodeCommand& VirtualCodeCommandToExecute)
+    {
+        VirtualMachineStack.push(VirtualMachineMemory[VirtualCodeCommandToExecute.TargetAddress]);
+    }
+
+    void SaveValueFromStackToVariable(const VirtualCodeCommand& VirtualCodeCommandToExecute)
+    {
+        VirtualMachineMemory[VirtualCodeCommandToExecute.TargetAddress] = VirtualMachineStack.top();
+        VirtualMachineStack.pop();
+    }
+
+    void Call(const VirtualCodeCommand& VirtualCodeCommandToExecute)
+    {
+        VirtualMachineStack.push(RunningVirtualCommandIndex);
+        RunningVirtualCommandIndex = VirtualCodeCommandToExecute.TargetAddress;
+    }
+
+    void Return(const VirtualCodeCommand& VirtualCodeCommandToExecute)
+    {
+        RunningVirtualCommandIndex = static_cast<UnsignedInt>(VirtualMachineStack.top());
+        VirtualMachineStack.pop();
+    }
+
+    void JumpConditional(const VirtualCodeCommand& VirtualCodeCommandToExecute)
+    {
+        if (VirtualMachineStack.top() == 0)
+            RunningVirtualCommandIndex = VirtualCodeCommandToExecute.TargetAddress;
+        VirtualMachineStack.pop();
+    }
+
+    void Jump(const VirtualCodeCommand& VirtualCodeCommandToExecute)
+    {
+        RunningVirtualCommandIndex = VirtualCodeCommandToExecute.TargetAddress;
+    }
+
 
 public:
-    void loadProgram(const std::vector<VirtualCodeCommand>& prog)
+    void LoadProgram(const std::vector<VirtualCodeCommand>& ProgramCode)
     {
-        program = prog;
-        pc = 0;
-        running = true;
+        ProgramCodeCommandsList = ProgramCode;
+        RunningVirtualCommandIndex = 0;
+        ProgramRunning = true;
     }
 
-    void run()
+    void RunProgram()
     {
-        while (running && pc < program.size())
+        while (ProgramRunning && RunningVirtualCommandIndex < ProgramCodeCommandsList.size())
         {
-            executeInstruction(program[pc]);
-            pc++;
+            ExecuteVirtualCommand(ProgramCodeCommandsList[RunningVirtualCommandIndex]);
+            RunningVirtualCommandIndex++;
         }
     }
 
-    void printMemory() const
+    void PrintMemory() const
     {
-        for (const auto& [addr, value] : memory)
-        {
+        for (const auto& [addr, value] : VirtualMachineMemory)
             std::cout << "Memory[" << addr << "] = " << value << std::endl;
-        }
     }
 
-    void printStack() const
+    void PrintStack() const
     {
-        std::stack<double> temp = stack;
+        auto TemporaryVirtualMachineStack = VirtualMachineStack;
         std::cout << "Stack (top to bottom): ";
-        while (!temp.empty())
+        while (!TemporaryVirtualMachineStack.empty())
         {
-            std::cout << temp.top() << " ";
-            temp.pop();
+            std::cout << TemporaryVirtualMachineStack.top() << " ";
+            TemporaryVirtualMachineStack.pop();
         }
         std::cout << std::endl;
     }
 };
 
-std::vector<VirtualCodeCommand> createSampleProgram()
+std::vector<VirtualCodeCommand> CreateSampleProgram()
 {
     return
     {
+        { VirtualCommandName::LDC, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_TYPE, 5, 0, 0, 0, 0, 0, 0 },
+        { VirtualCommandName::SVV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_TYPE, 0, 0, 0, 0, 0, 0, 15 },
+
         { VirtualCommandName::LDC, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_TYPE, 10, 0, 0, 0, 0, 0, 0 },
         { VirtualCommandName::LDC, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_TYPE, 10, 0, 0, 0, 0, 0, 0 },
         { VirtualCommandName::LDC, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_TYPE, 20, 0, 0, 0, 0, 0, 0 },
         { VirtualCommandName::OPR, VirtualCommandOperationType::ADD, VirtualCommandDataType::SIGNED_TYPE, 0, 0, 0, 0, 0, 0, 0 },
         { VirtualCommandName::OPR, VirtualCommandOperationType::MUL, VirtualCommandDataType::SIGNED_TYPE, 0, 0, 0, 0, 0, 0, 0 },
         { VirtualCommandName::SVV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_TYPE, 0, 0, 0, 0, 0, 0, 20 },
-        { VirtualCommandName::LDC, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_TYPE, 5, 0, 0, 0, 0, 0, 0 },
+
+        { VirtualCommandName::PRINT, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_TYPE, 0, 0, 0, 0, 0, 0, 0 },
+
+        { VirtualCommandName::LDV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_TYPE, 0, 0, 0, 0, 0, 0, 15 },
+        { VirtualCommandName::LDC, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_TYPE, 1, 0, 0, 0, 0, 0, 0 },
+        { VirtualCommandName::OPR, VirtualCommandOperationType::ADD, VirtualCommandDataType::SIGNED_TYPE, 0, 0, 0, 0, 0, 0, 0 },
         { VirtualCommandName::SVV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_TYPE, 0, 0, 0, 0, 0, 0, 15 },
-        //{ VirtualCommandName::RET, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_TYPE, 0, 0, 0, 0, 0, 0, 0 }
+
+        { VirtualCommandName::LDV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_TYPE, 0, 0, 0, 0, 0, 0, 15 },
+        { VirtualCommandName::LDC, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_TYPE, 10, 0, 0, 0, 0, 0, 0 },
+        { VirtualCommandName::OPR, VirtualCommandOperationType::EQU, VirtualCommandDataType::SIGNED_TYPE, 0, 0, 0, 0, 0, 0, 0 },
+        { VirtualCommandName::JCON, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_TYPE, 0, 0, 0, 0, 0, 0, 7 },
     };
 }
 
-int test()
+int TestVirtualMachine()
 {
-    VirtualMachine vm;
+    VirtualMachine VirtualMachinObject;
 
-    auto program = createSampleProgram();
-    vm.loadProgram(program);
+    const auto Program = CreateSampleProgram();
+    VirtualMachinObject.LoadProgram(Program);
 
-    vm.run();
+    VirtualMachinObject.RunProgram();
 
-    vm.printStack();
-    vm.printMemory();
+    VirtualMachinObject.PrintStack();
+    VirtualMachinObject.PrintMemory();
 
     return 0;
 }
