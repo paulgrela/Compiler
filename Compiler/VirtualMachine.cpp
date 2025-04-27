@@ -19,9 +19,9 @@ struct StackDataType
     {
         UnsignedInt UnsignedLongIntType;
         SignedInt SignedLongIntType;
-        long double LongDoubleType;
+        RealType LongDoubleType;
     };
-    StackDataType(const VirtualCommandDataType TypeParam, const long double ValueParam) : Type(TypeParam), LongDoubleType(ValueParam)
+    StackDataType(const VirtualCommandDataType TypeParam, const RealType ValueParam) : Type(TypeParam), LongDoubleType(ValueParam)
     {
     }
     StackDataType(const VirtualCommandDataType TypeParam, const SignedInt ValueParam) : Type(TypeParam), SignedLongIntType(ValueParam)
@@ -35,8 +35,10 @@ struct StackDataType
 class VirtualMachine
 {
 private:
+    UnsignedInt MemorySize{};
+private:
     std::stack<StackDataType> VirtualMachineStack;
-    std::unordered_map<UnsignedInt, RealType> VirtualMachineMemory;
+    std::vector<std::uint8_t> VirtualMachineMemory;
 private:
     std::vector<VirtualCodeCommand> ProgramCodeCommandsList;
     UnsignedInt RunningVirtualCommandIndex = 0;
@@ -120,27 +122,81 @@ private:
 
     void LoadVariableToStack(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
-        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataType::FLOAT_TYPE || VirtualCodeCommandToExecute.Type == VirtualCommandDataType::DOUBLE_TYPE || VirtualCodeCommandToExecute.Type == VirtualCommandDataType::LONG_DOUBLE_TYPE || VirtualCodeCommandToExecute.Type == VirtualCommandDataType::EXTENDED_TYPE)
-            VirtualMachineStack.push(StackDataType(VirtualCodeCommandToExecute.Type, static_cast<RealType>(VirtualMachineMemory[VirtualCodeCommandToExecute.TargetAddress])));
+        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataType::FLOAT_TYPE)
+            VirtualMachineStack.push(StackDataType(VirtualCodeCommandToExecute.Type, static_cast<RealType>(*reinterpret_cast<float*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress))));
         else
-        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataType::SIGNED_CHAR_TYPE || VirtualCodeCommandToExecute.Type == VirtualCommandDataType::SIGNED_SHORT_TYPE || VirtualCodeCommandToExecute.Type == VirtualCommandDataType::SIGNED_INT_TYPE || VirtualCodeCommandToExecute.Type == VirtualCommandDataType::SIGNED_LONG_INT_TYPE)
-            VirtualMachineStack.push(StackDataType(VirtualCodeCommandToExecute.Type, static_cast<SignedInt>(VirtualMachineMemory[VirtualCodeCommandToExecute.TargetAddress])));
+        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataType::DOUBLE_TYPE)
+            VirtualMachineStack.push(StackDataType(VirtualCodeCommandToExecute.Type, static_cast<RealType>(*reinterpret_cast<double*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress))));
         else
-        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataType::UNSIGNED_CHAR_TYPE || VirtualCodeCommandToExecute.Type == VirtualCommandDataType::UNSIGNED_SHORT_TYPE || VirtualCodeCommandToExecute.Type == VirtualCommandDataType::UNSIGNED_INT_TYPE || VirtualCodeCommandToExecute.Type == VirtualCommandDataType::UNSIGNED_LONG_INT_TYPE)
-            VirtualMachineStack.push(StackDataType(VirtualCodeCommandToExecute.Type, static_cast<UnsignedInt>(VirtualMachineMemory[VirtualCodeCommandToExecute.TargetAddress])));
-
+        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataType::LONG_DOUBLE_TYPE)
+            VirtualMachineStack.push(StackDataType(VirtualCodeCommandToExecute.Type, *reinterpret_cast<RealType*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress)));
+        else
+        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataType::EXTENDED_TYPE)
+            VirtualMachineStack.push(StackDataType(VirtualCodeCommandToExecute.Type, *reinterpret_cast<RealType*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress)));
+        else
+        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataType::SIGNED_CHAR_TYPE)
+            VirtualMachineStack.push(StackDataType(VirtualCodeCommandToExecute.Type, static_cast<SignedInt>(*reinterpret_cast<int8_t*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress))));
+        else
+        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataType::SIGNED_SHORT_TYPE)
+            VirtualMachineStack.push(StackDataType(VirtualCodeCommandToExecute.Type, static_cast<SignedInt>(*reinterpret_cast<int16_t*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress))));
+        else
+        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataType::SIGNED_INT_TYPE)
+            VirtualMachineStack.push(StackDataType(VirtualCodeCommandToExecute.Type, static_cast<SignedInt>(*reinterpret_cast<int32_t*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress))));
+        else
+        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataType::SIGNED_LONG_INT_TYPE)
+            VirtualMachineStack.push(StackDataType(VirtualCodeCommandToExecute.Type, *reinterpret_cast<SignedInt*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress)));
+        else
+        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataType::UNSIGNED_CHAR_TYPE)
+            VirtualMachineStack.push(StackDataType(VirtualCodeCommandToExecute.Type, static_cast<UnsignedInt>(*reinterpret_cast<uint8_t*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress))));
+        else
+        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataType::UNSIGNED_SHORT_TYPE)
+            VirtualMachineStack.push(StackDataType(VirtualCodeCommandToExecute.Type, static_cast<UnsignedInt>(*reinterpret_cast<uint16_t*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress))));
+        else
+        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataType::UNSIGNED_INT_TYPE)
+            VirtualMachineStack.push(StackDataType(VirtualCodeCommandToExecute.Type, static_cast<UnsignedInt>(*reinterpret_cast<uint32_t*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress))));
+        else
+        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataType::UNSIGNED_LONG_INT_TYPE)
+            VirtualMachineStack.push(StackDataType(VirtualCodeCommandToExecute.Type, *reinterpret_cast<UnsignedInt*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress)));
     }
 
     void SaveValueFromStackToVariable(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
-        if (VirtualMachineStack.top().Type == VirtualCommandDataType::FLOAT_TYPE || VirtualMachineStack.top().Type == VirtualCommandDataType::DOUBLE_TYPE || VirtualMachineStack.top().Type == VirtualCommandDataType::LONG_DOUBLE_TYPE || VirtualMachineStack.top().Type == VirtualCommandDataType::EXTENDED_TYPE)
-            VirtualMachineMemory[VirtualCodeCommandToExecute.TargetAddress] = VirtualMachineStack.top().LongDoubleType;
+        if (VirtualMachineStack.top().Type == VirtualCommandDataType::FLOAT_TYPE)
+            *reinterpret_cast<float*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress) = static_cast<float>(VirtualMachineStack.top().LongDoubleType);
         else
-        if (VirtualMachineStack.top().Type == VirtualCommandDataType::SIGNED_CHAR_TYPE || VirtualMachineStack.top().Type == VirtualCommandDataType::SIGNED_SHORT_TYPE || VirtualMachineStack.top().Type == VirtualCommandDataType::SIGNED_INT_TYPE || VirtualMachineStack.top().Type == VirtualCommandDataType::SIGNED_LONG_INT_TYPE)
-            VirtualMachineMemory[VirtualCodeCommandToExecute.TargetAddress] = VirtualMachineStack.top().SignedLongIntType;
+        if (VirtualMachineStack.top().Type == VirtualCommandDataType::DOUBLE_TYPE)
+            *reinterpret_cast<double*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress) = static_cast<double>(VirtualMachineStack.top().LongDoubleType);
         else
-        if (VirtualMachineStack.top().Type == VirtualCommandDataType::UNSIGNED_CHAR_TYPE || VirtualMachineStack.top().Type == VirtualCommandDataType::UNSIGNED_SHORT_TYPE || VirtualMachineStack.top().Type == VirtualCommandDataType::UNSIGNED_INT_TYPE || VirtualMachineStack.top().Type == VirtualCommandDataType::UNSIGNED_LONG_INT_TYPE)
-            VirtualMachineMemory[VirtualCodeCommandToExecute.TargetAddress] = VirtualMachineStack.top().UnsignedLongIntType;
+        if (VirtualMachineStack.top().Type == VirtualCommandDataType::LONG_DOUBLE_TYPE)
+            *reinterpret_cast<RealType*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress) = VirtualMachineStack.top().LongDoubleType;
+        else
+        if (VirtualMachineStack.top().Type == VirtualCommandDataType::EXTENDED_TYPE)
+            *reinterpret_cast<RealType*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress) = VirtualMachineStack.top().LongDoubleType;
+        else
+        if (VirtualMachineStack.top().Type == VirtualCommandDataType::SIGNED_CHAR_TYPE)
+            *reinterpret_cast<int8_t*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress) = static_cast<int8_t>(VirtualMachineStack.top().SignedLongIntType);
+        else
+        if (VirtualMachineStack.top().Type == VirtualCommandDataType::SIGNED_SHORT_TYPE)
+            *reinterpret_cast<int16_t*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress) = static_cast<int16_t>(VirtualMachineStack.top().SignedLongIntType);
+        else
+        if (VirtualMachineStack.top().Type == VirtualCommandDataType::SIGNED_INT_TYPE)
+            *reinterpret_cast<int32_t*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress) = static_cast<int32_t>(VirtualMachineStack.top().SignedLongIntType);
+        else
+        if (VirtualMachineStack.top().Type == VirtualCommandDataType::SIGNED_LONG_INT_TYPE)
+            *reinterpret_cast<int64_t*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress) = VirtualMachineStack.top().SignedLongIntType;
+        else
+        if (VirtualMachineStack.top().Type == VirtualCommandDataType::UNSIGNED_CHAR_TYPE)
+            *reinterpret_cast<uint8_t*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress) = static_cast<uint8_t>(VirtualMachineStack.top().UnsignedLongIntType);
+        else
+        if (VirtualMachineStack.top().Type == VirtualCommandDataType::UNSIGNED_SHORT_TYPE)
+            *reinterpret_cast<uint16_t*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress) = static_cast<uint16_t>(VirtualMachineStack.top().UnsignedLongIntType);
+        else
+        if (VirtualMachineStack.top().Type == VirtualCommandDataType::UNSIGNED_INT_TYPE)
+            *reinterpret_cast<uint32_t*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress) = static_cast<int32_t>(VirtualMachineStack.top().UnsignedLongIntType);
+        else
+        if (VirtualMachineStack.top().Type == VirtualCommandDataType::UNSIGNED_LONG_INT_TYPE)
+            *reinterpret_cast<uint64_t*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress) = VirtualMachineStack.top().UnsignedLongIntType;
+
         VirtualMachineStack.pop();
     }
 
@@ -195,8 +251,8 @@ public:
 
     void PrintMemory() const
     {
-        for (const auto& [addr, value] : VirtualMachineMemory)
-            cout << "Memory[" << addr << "] = " << value << endl;
+        for (UnsignedInt ByteIndex = 0; ByteIndex < VirtualMachineMemory.size(); ByteIndex++)
+            cout << "Memory[" << to_string(ByteIndex) << "] = " << to_string(VirtualMachineMemory[ByteIndex]) << endl;
     }
 
     void PrintStack() const
@@ -209,6 +265,10 @@ public:
             TemporaryVirtualMachineStack.pop();
         }
         cout << "END STACK" << endl;
+    }
+
+    explicit VirtualMachine(const UnsignedInt MemorySizeParam) : MemorySize(MemorySizeParam), VirtualMachineMemory(MemorySize)
+    {
     }
 };
 
@@ -240,15 +300,29 @@ std::vector<VirtualCodeCommand> CreateSampleProgram()
     };
 }
 
+void ReinterpretCastTest()
+{
+    vector<unsigned char> ByteVector(128);
+
+    cout << "REINTERPRET CAST DATA" << endl;
+
+    for (auto& Byte : ByteVector)
+        Byte = 0;
+
+    ByteVector[8] = 255;
+    ByteVector[9] = 255;
+    cout << reinterpret_cast<uint64_t*>(ByteVector.data())[1] << endl;
+    cout << *reinterpret_cast<uint64_t*>(ByteVector.data() + 8) << endl;
+}
+
 int TestVirtualMachine()
 {
-    VirtualMachine VirtualMachinObject;
+    VirtualMachine VirtualMachinObject(32);
 
     const auto Program = CreateSampleProgram();
+
     VirtualMachinObject.LoadProgram(Program);
-
     VirtualMachinObject.RunProgram();
-
     VirtualMachinObject.PrintStack();
     VirtualMachinObject.PrintMemory();
 
