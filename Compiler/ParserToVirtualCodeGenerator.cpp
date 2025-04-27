@@ -142,16 +142,24 @@ void ParserToVirtualCodeGenerator::InitDataForParserToIntermediateCodeGenerator(
 
     ProgramPointer = ProgramClassPointer = make_shared<ClassDefinition>();
 
-    InitializeType(TokenSymbol::IntSym, VirtualCommandDataType::INT_TYPE, 4, 0, nullptr, nullptr, nullptr);
+    InitializeType(TokenSymbol::SignedCharSym, VirtualCommandDataType::SIGNED_CHAR_TYPE, 1, 0, nullptr, nullptr, nullptr);
+    InitializeType(TokenSymbol::UnsignedCharSym, VirtualCommandDataType::UNSIGNED_CHAR_TYPE, 1, 0, nullptr, nullptr, nullptr);
+
+    InitializeType(TokenSymbol::SignedShortIntSym, VirtualCommandDataType::SIGNED_SHORT_TYPE, 2, 0, nullptr, nullptr, nullptr);
+    InitializeType(TokenSymbol::UnsignedShortIntSym, VirtualCommandDataType::UNSIGNED_SHORT_TYPE, 2, 0, nullptr, nullptr, nullptr);
+
+    InitializeType(TokenSymbol::SignedIntSym, VirtualCommandDataType::SIGNED_INT_TYPE, 4, 0, nullptr, nullptr, nullptr);
+    InitializeType(TokenSymbol::UnsignedIntSym, VirtualCommandDataType::UNSIGNED_INT_TYPE, 4, 0, nullptr, nullptr, nullptr);
+
+    InitializeType(TokenSymbol::SignedLongIntSym, VirtualCommandDataType::SIGNED_LONG_INT_TYPE, 8, 0, nullptr, nullptr, nullptr);
+    InitializeType(TokenSymbol::UnsignedLongIntSym, VirtualCommandDataType::UNSIGNED_LONG_INT_TYPE, 8, 0, nullptr, nullptr, nullptr);
+
     InitializeType(TokenSymbol::FloatSym, VirtualCommandDataType::FLOAT_TYPE, 4, 0, nullptr, nullptr, nullptr);
     InitializeType(TokenSymbol::DoubleSym, VirtualCommandDataType::DOUBLE_TYPE, 8, 0, nullptr, nullptr, nullptr);
+    InitializeType(TokenSymbol::LongDoubleSym, VirtualCommandDataType::LONG_DOUBLE_TYPE, 10, 0, nullptr, nullptr, nullptr);
     InitializeType(TokenSymbol::ExtendedSym, VirtualCommandDataType::EXTENDED_TYPE, 10, 0, nullptr, nullptr, nullptr);
-    InitializeType(TokenSymbol::UnsignedSym, VirtualCommandDataType::UNSIGNED_TYPE, 4, 0, nullptr, nullptr, nullptr);
-    InitializeType(TokenSymbol::CharSym, VirtualCommandDataType::CHAR_TYPE, 1, 0, nullptr, nullptr, nullptr);
+
     InitializeType(TokenSymbol::BCDSym, VirtualCommandDataType::BCD_TYPE, 4, 0, nullptr, nullptr, nullptr);
-    InitializeType(TokenSymbol::SignedSym, VirtualCommandDataType::SIGNED_TYPE, 4, 0, nullptr, nullptr, nullptr);
-    InitializeType(TokenSymbol::LongSym, VirtualCommandDataType::LONG_TYPE, 4, 0, nullptr, nullptr, nullptr);
-    InitializeType(TokenSymbol::ShortSym, VirtualCommandDataType::SHORT_TYPE, 2, 0, nullptr, nullptr, nullptr);
     InitializeType(TokenSymbol::VoidSym, VirtualCommandDataType::VOID_TYPE, 4, 0, nullptr, nullptr, nullptr);
 }
 
@@ -701,7 +709,7 @@ void ParserToVirtualCodeGenerator::ExpressionOneArgumentBitAnd()
 void ParserToVirtualCodeGenerator::ExpressionOneArgumentStrPtr()
 {
     GetNextTokenSymbol();
-    GenerateVirtualCodeCommand(VirtualCommandName::LDV, static_cast<UnsignedInt>(NewLastTokenSymbolType = static_cast<TokenSymbol>(static_cast<UnsignedInt>(TokenSymbol::CharSym) + ConstantForSymbolToAdd)), GeneratedLexicalAnalysisTokens[GeneratedLexicalAnalysisTokenPosition - 1].Type);
+    GenerateVirtualCodeCommand(VirtualCommandName::LDV, static_cast<UnsignedInt>(NewLastTokenSymbolType = static_cast<TokenSymbol>(static_cast<UnsignedInt>(TokenSymbol::UnsignedCharSym) + ConstantForSymbolToAdd)), GeneratedLexicalAnalysisTokens[GeneratedLexicalAnalysisTokenPosition - 1].Type);
     GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Kind = -ConstantForSymbolToAdd;
 }
 
@@ -840,7 +848,7 @@ void ParserToVirtualCodeGenerator::ExpressionOneArgumentSizeOf()
         PrintError("type to get_sizeof in parents is not declared");
 
     GenerateVirtualCodeCommand(VirtualCommandName::LDC, 0, VariableType->Length);
-    NewLastTokenSymbolType = TokenSymbol::IntSym;
+    NewLastTokenSymbolType = TokenSymbol::SignedIntSym;
     GetNextTokenSymbol();
     if (GeneratedLexicalAnalysisTokens[GeneratedLexicalAnalysisTokenPosition].Symbol != TokenSymbol::RightParSym)
         PrintError("missing )");
@@ -956,7 +964,7 @@ void ParserToVirtualCodeGenerator::ExpressionSuffix()
             else
             {
                 GenerateVirtualCodeCommand(VirtualCommandName::LDC, 0, rozm_mul);
-                NewLastTokenSymbolType = TokenSymbol::IntSym;
+                NewLastTokenSymbolType = TokenSymbol::SignedIntSym;
                 GenerateVirtualCodeCommand(VirtualCommandName::OPR, 0, 0, VirtualCommandOperationType::MUL);
                 GenerateVirtualCodeCommand(VirtualCommandName::OPR, 0, 0, VirtualCommandOperationType::ADD);
             }
@@ -983,16 +991,24 @@ TokenSymbol ParserToVirtualCodeGenerator::GetTokenSymbolForType(VirtualCommandDa
 {
     switch (TypeNumericCode)
     {
-        case VirtualCommandDataType::INT_TYPE : return TokenSymbol::IntSym;
-        case VirtualCommandDataType::CHAR_TYPE : return TokenSymbol::CharSym;
-        case VirtualCommandDataType::LONG_TYPE : return TokenSymbol::LongSym;
-        case VirtualCommandDataType::UNSIGNED_TYPE : return TokenSymbol::UnsignedSym;
+        case VirtualCommandDataType::SIGNED_CHAR_TYPE : return TokenSymbol::SignedCharSym;
+        case VirtualCommandDataType::UNSIGNED_CHAR_TYPE : return TokenSymbol::UnsignedCharSym;
+
+        case VirtualCommandDataType::SIGNED_SHORT_TYPE : return TokenSymbol::SignedShortIntSym;
+        case VirtualCommandDataType::UNSIGNED_SHORT_TYPE : return TokenSymbol::UnsignedShortIntSym;
+
+        case VirtualCommandDataType::SIGNED_INT_TYPE : return TokenSymbol::SignedIntSym;
+        case VirtualCommandDataType::UNSIGNED_INT_TYPE : return TokenSymbol::UnsignedIntSym;
+
+        case VirtualCommandDataType::SIGNED_LONG_INT_TYPE : return TokenSymbol::SignedLongIntSym;
+        case VirtualCommandDataType::UNSIGNED_LONG_INT_TYPE : return TokenSymbol::UnsignedLongIntSym;
+
         case VirtualCommandDataType::FLOAT_TYPE : return TokenSymbol::FloatSym;
         case VirtualCommandDataType::DOUBLE_TYPE : return TokenSymbol::DoubleSym;
         case VirtualCommandDataType::EXTENDED_TYPE : return TokenSymbol::ExtendedSym;
+
         case VirtualCommandDataType::BCD_TYPE : return TokenSymbol::BCDSym;
-        case VirtualCommandDataType::SIGNED_TYPE : return TokenSymbol::SignedSym;
-        case VirtualCommandDataType::SHORT_TYPE : return TokenSymbol::ShortSym;
+
         default : return static_cast<TokenSymbol>(TypeNumericCode);
     }
 }
@@ -1230,7 +1246,7 @@ void ParserToVirtualCodeGenerator::ExpressionSimpleIdentifier()
 void ParserToVirtualCodeGenerator::ExpressionSimpleNumber()
 {
     GenerateVirtualCodeCommand(VirtualCommandName::LDC, 0, GeneratedLexicalAnalysisTokens[GeneratedLexicalAnalysisTokenPosition].Type);
-    NewLastTokenSymbolType = TokenSymbol::IntSym;
+    NewLastTokenSymbolType = TokenSymbol::SignedIntSym;
     GetNextTokenSymbol();
 }
 
@@ -1689,12 +1705,12 @@ void ParserToVirtualCodeGenerator::InstructionNew()
         if (Pointer)
         {
             GenerateVirtualCodeCommand(VirtualCommandName::LDC, 0, 4);
-            NewLastTokenSymbolType = TokenSymbol::IntSym;
+            NewLastTokenSymbolType = TokenSymbol::SignedIntSym;
         }
         if (!Pointer)
         {
             GenerateVirtualCodeCommand(VirtualCommandName::LDC, 0, PointerType->Length);
-            NewLastTokenSymbolType = TokenSymbol::IntSym;
+            NewLastTokenSymbolType = TokenSymbol::SignedIntSym;
         }
         while (GeneratedLexicalAnalysisTokens[GeneratedLexicalAnalysisTokenPosition].Symbol == TokenSymbol::LeftSquareSym)
         {
@@ -2357,7 +2373,7 @@ void ParserToVirtualCodeGenerator::ArrayDeclarationGlobal(const UnsignedInt Arra
         {
             ProgramPointer->ArraysContainer[ArrayNumericCode] = make_shared<ArrayDefinition>(PointerToGlobalStack, FindType(static_cast<UnsignedInt>(TokenSymbolType)));
             UnsignedInt tab_length = ArrayDeclaration(PointerToGlobalStack, ProgramPointer->ArraysContainer[ArrayNumericCode].get());
-            SaveGlobalData(ArrayNumericCode, TokenSymbol::CharSym, tab_length);
+            SaveGlobalData(ArrayNumericCode, TokenSymbol::UnsignedCharSym, tab_length);
             ProgramPointer->ArraysContainer[ArrayNumericCode]->IndexToDescribeInGlobalDataArray = GlobalData.size() - 1;
             //napisz nazwy w pliku asemblerowym,a po sredniku adres-liczbe
             //CO GDY obliczenia NA STALYCH wowczas mov ebx,offset tab1+1234 ; 2045

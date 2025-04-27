@@ -17,26 +17,20 @@ enum class TokenSymbol : UnsignedInt
     BreakSym,
     CaseSym,
     CatchSym,
-    CharSym,
     ClassSym,
     ConstSym,
     ContinueSym,
     DefaultSym,
     DeleteSym,
     DoSym,
-    DoubleSym,
     ElseSym,
     EnumSym,
-    ExtendedSym,
     ExternSym,
-    FloatSym,
     ForSym,
     FriendSym,
     GotoSym,
     IfSym,
     InlineSym,
-    IntSym,
-    LongSym,
     NewSym,
     OperatorSym,
     PrivateSym,
@@ -44,7 +38,6 @@ enum class TokenSymbol : UnsignedInt
     PublicSym,
     RegisterSym,
     ReturnSym,
-    ShortSym,
     SignedSym,
     SizeOfSym,
     StaticSym,
@@ -112,35 +105,46 @@ enum class TokenSymbol : UnsignedInt
     AssignShlSym,
     AssignShrSym,
     ArrowSym,
-    StrPtrSym
+    StrPtrSym,
+
+    SignedCharSym,
+    UnsignedCharSym,
+
+    SignedShortIntSym,
+    UnsignedShortIntSym,
+
+    SignedIntSym,
+    UnsignedIntSym,
+
+    SignedLongIntSym,
+    UnsignedLongIntSym,
+
+    FloatSym,
+    DoubleSym,
+    LongDoubleSym,
+    ExtendedSym
 };
 
-const std::unordered_map<std::string, TokenSymbol> word =
+const std::unordered_map<std::string, TokenSymbol> KeyWords =
 {
     { "bcd", TokenSymbol::BCDSym },
     { "break", TokenSymbol::BreakSym },
     { "case", TokenSymbol::CaseSym },
     { "catch", TokenSymbol::CatchSym },
-    { "char", TokenSymbol::CharSym },
     { "class", TokenSymbol::ClassSym },
     { "const", TokenSymbol::ConstSym },
     { "continue", TokenSymbol::ContinueSym },
     { "default", TokenSymbol::DefaultSym },
     { "delete", TokenSymbol::DeleteSym },
     { "do", TokenSymbol::DoSym },
-    { "double", TokenSymbol::DoubleSym },
     { "else", TokenSymbol::ElseSym },
     { "enum", TokenSymbol::EnumSym },
-    { "extended", TokenSymbol::ExtendedSym },
     { "extern", TokenSymbol::ExternSym },
-    { "float", TokenSymbol::FloatSym },
     { "for", TokenSymbol::ForSym },
     { "friend", TokenSymbol::FriendSym },
     { "goto", TokenSymbol::GotoSym },
     { "if", TokenSymbol::IfSym },
     { "inline", TokenSymbol::InlineSym },
-    { "int", TokenSymbol::IntSym },
-    { "long", TokenSymbol::LongSym },
     { "new", TokenSymbol::NewSym },
     { "operator", TokenSymbol::OperatorSym },
     { "private", TokenSymbol::PrivateSym },
@@ -148,7 +152,6 @@ const std::unordered_map<std::string, TokenSymbol> word =
     { "public", TokenSymbol::PublicSym },
     { "register", TokenSymbol::RegisterSym},
     { "return", TokenSymbol::ReturnSym },
-    { "short", TokenSymbol::ShortSym },
     { "signed", TokenSymbol::SignedSym },
     { "sizeof", TokenSymbol::SizeOfSym },
     { "static", TokenSymbol::StaticSym },
@@ -164,7 +167,38 @@ const std::unordered_map<std::string, TokenSymbol> word =
     { "void", TokenSymbol::VoidSym },
     { "volatile", TokenSymbol::VolatileSym },
     { "while", TokenSymbol::WhileSym },
-    { "with", TokenSymbol::WithSym }
+
+    { "char", TokenSymbol::SignedCharSym },
+    { "signed char", TokenSymbol::SignedCharSym },
+    { "unsigned char", TokenSymbol::UnsignedCharSym },
+
+    { "short", TokenSymbol::SignedShortIntSym },
+    { "short int", TokenSymbol::SignedShortIntSym },
+    { "signed short int", TokenSymbol::SignedShortIntSym },
+    { "short signed int", TokenSymbol::SignedShortIntSym },
+
+    { "unsigned short int", TokenSymbol::UnsignedShortIntSym },
+    { "short unsigned int", TokenSymbol::UnsignedShortIntSym },
+
+    { "int", TokenSymbol::SignedIntSym },
+    { "signed int", TokenSymbol::SignedIntSym },
+
+    { "unsigned", TokenSymbol::UnsignedIntSym },
+    { "unsigned int", TokenSymbol::UnsignedIntSym },
+
+    { "long", TokenSymbol::SignedLongIntSym },
+    { "long int", TokenSymbol::SignedLongIntSym },
+    { "signed long int",TokenSymbol::SignedLongIntSym },
+    { "long signed int", TokenSymbol::SignedLongIntSym },
+
+    { "unsigned long int", TokenSymbol::UnsignedLongIntSym },
+    { "long unsigned int", TokenSymbol::UnsignedLongIntSym },
+
+    { "float", TokenSymbol::FloatSym },
+    { "double", TokenSymbol::DoubleSym },
+    { "long double", TokenSymbol::LongDoubleSym },
+
+    { "extended", TokenSymbol::ExtendedSym },
 };
 
 struct CallDefinition
@@ -227,22 +261,30 @@ enum class VirtualCommandName : UnsignedInt
     NTH,
     END,
     RET,
-    PRINT
+    PRINT,
 };
 
 enum class VirtualCommandDataType : SignedInt
 {
-    CHAR_TYPE = 300,
-    FLOAT_TYPE = 301,
-    DOUBLE_TYPE = 302,
-    EXTENDED_TYPE = 303,
-    INT_TYPE = 304,
-    UNSIGNED_TYPE = 305,
-    BCD_TYPE = 306,
-    SIGNED_TYPE = 307,
-    LONG_TYPE = 308,
-    SHORT_TYPE = 309,
-    VOID_TYPE = 310
+    SIGNED_CHAR_TYPE = 301,
+    UNSIGNED_CHAR_TYPE = 302,
+
+    SIGNED_SHORT_TYPE = 303,
+    UNSIGNED_SHORT_TYPE = 304,
+
+    SIGNED_INT_TYPE = 305,
+    UNSIGNED_INT_TYPE = 306,
+
+    SIGNED_LONG_INT_TYPE = 307,
+    UNSIGNED_LONG_INT_TYPE = 308,
+
+    FLOAT_TYPE = 311,
+    DOUBLE_TYPE = 312,
+    LONG_DOUBLE_TYPE = 313,
+    EXTENDED_TYPE = 314,
+
+    BCD_TYPE = 319,
+    VOID_TYPE = 320
 };
 
 enum class VirtualCommandOperationType : SignedInt

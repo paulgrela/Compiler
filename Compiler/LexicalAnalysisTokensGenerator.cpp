@@ -32,7 +32,7 @@ void LexicalAnalysisTokensGenerator::GetWordTokenChars()
     }
     while (isalnum(static_cast<char>(CurrentChar)) || CurrentChar == '_');
 
-    if (auto KeyWordIter = word.find(StrId); KeyWordIter != word.end())
+    if (const auto KeyWordIter = KeyWords.find(StrId); KeyWordIter != KeyWords.end())
     {
         GeneratedLexicalAnalysisTokens[GeneratedLexicalAnalysisTokenPosition].Symbol = KeyWordIter->second;
         GeneratedLexicalAnalysisTokens[GeneratedLexicalAnalysisTokenPosition].CurrentChar = CurrentChar;

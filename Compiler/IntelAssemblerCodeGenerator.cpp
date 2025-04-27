@@ -243,13 +243,13 @@ void IntelAssemblerCodeGenerator::PrintGlobalVariablesDeclarations() const
     {
         UnsignedInt Position;
         const string DatatType[4] = { "db", "dw", "dd", "dq" };
-        if (GlobalDataObject.TypeNumericCode == static_cast<UnsignedInt>(TokenSymbol::CharSym))
+        if (GlobalDataObject.TypeNumericCode == static_cast<UnsignedInt>(TokenSymbol::UnsignedCharSym))
             Position = 0;
         else
-        if (GlobalDataObject.TypeNumericCode == static_cast<UnsignedInt>(TokenSymbol::ShortSym))
+        if (GlobalDataObject.TypeNumericCode == static_cast<UnsignedInt>(TokenSymbol::SignedShortIntSym))
             Position = 1;
         else
-        if (GlobalDataObject.TypeNumericCode == static_cast<UnsignedInt>(TokenSymbol::IntSym))
+        if (GlobalDataObject.TypeNumericCode == static_cast<UnsignedInt>(TokenSymbol::SignedIntSym))
             Position = 2;
         else
         if (GlobalDataObject.TypeNumericCode == static_cast<UnsignedInt>(TokenSymbol::DoubleSym))
@@ -429,28 +429,28 @@ void IntelAssemblerCodeGenerator::GenerateConditionalOperations(const UnsignedIn
     if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::NEQ)
         GenerateConditionOperation(VirtualCodeCommandIndex, "je l", "jne l");
     else
-    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::JB && DataTypeNumericCode == VirtualCommandDataType::UNSIGNED_TYPE)
+    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::JB && DataTypeNumericCode == VirtualCommandDataType::UNSIGNED_INT_TYPE)
         GenerateConditionOperation(VirtualCodeCommandIndex, "jae l", "jb l");
     else
-    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::JAE && DataTypeNumericCode == VirtualCommandDataType::UNSIGNED_TYPE)
+    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::JAE && DataTypeNumericCode == VirtualCommandDataType::UNSIGNED_INT_TYPE)
         GenerateConditionOperation(VirtualCodeCommandIndex, "jb l", "jae l");
     else
-    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::JA && DataTypeNumericCode == VirtualCommandDataType::UNSIGNED_TYPE)
+    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::JA && DataTypeNumericCode == VirtualCommandDataType::UNSIGNED_INT_TYPE)
         GenerateConditionOperation(VirtualCodeCommandIndex, "jbe l", "ja l");
     else
-    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::JBE && DataTypeNumericCode == VirtualCommandDataType::UNSIGNED_TYPE)
+    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::JBE && DataTypeNumericCode == VirtualCommandDataType::UNSIGNED_INT_TYPE)
         GenerateConditionOperation(VirtualCodeCommandIndex, "ja l", "jbe l");
     else
-    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::JB && DataTypeNumericCode == VirtualCommandDataType::INT_TYPE)
+    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::JB && DataTypeNumericCode == VirtualCommandDataType::SIGNED_INT_TYPE)
         GenerateConditionOperation(VirtualCodeCommandIndex, "jge l", "jl l");
     else
-    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::JAE && DataTypeNumericCode == VirtualCommandDataType::INT_TYPE)
+    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::JAE && DataTypeNumericCode == VirtualCommandDataType::SIGNED_INT_TYPE)
         GenerateConditionOperation(VirtualCodeCommandIndex, "jl l", "jge l");
     else
-    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::JA && DataTypeNumericCode == VirtualCommandDataType::INT_TYPE)
+    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::JA && DataTypeNumericCode == VirtualCommandDataType::SIGNED_INT_TYPE)
         GenerateConditionOperation(VirtualCodeCommandIndex, "jle l", "jg l");
     else
-    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::JBE && DataTypeNumericCode == VirtualCommandDataType::INT_TYPE)
+    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::JBE && DataTypeNumericCode == VirtualCommandDataType::SIGNED_INT_TYPE)
         GenerateConditionOperation(VirtualCodeCommandIndex, "jg l", "jle l");
 }
 
@@ -799,7 +799,7 @@ void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForSpecialPopEdxPush
 void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForSta(const UnsignedInt VirtualCodeCommandIndex)
 {
     CountConditionalJump("", VirtualCodeCommandIndex, IntelAssemblerCodeFile, AdditionalPrinting1);
-    DataTypeNumericCode = VirtualCommandDataType::INT_TYPE; // stala zawsze UnsignedInt - a trzeba rozopoznac
+    DataTypeNumericCode = VirtualCommandDataType::SIGNED_INT_TYPE; // stala zawsze UnsignedInt - a trzeba rozopoznac
 }
 
 void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForCallingFunction(const UnsignedInt VirtualCodeCommandIndex)
