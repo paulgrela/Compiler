@@ -11,6 +11,7 @@
 #include <cmath>
 
 #include "Types.h"
+#include "Constants.h"
 
 #include "VirtualMachine.h"
 
@@ -52,7 +53,6 @@ union ArithmeticTypeUnion
     uint16_t UnsignedShortType;
     uint32_t UnsignedIntType;
     UnsignedInt UnsignedLongIntType;
-
 };
 
 struct StackDataType
@@ -114,6 +114,9 @@ class VirtualMachine
 {
 private:
     UnsignedInt MemorySize{};
+    UnsignedInt StackSize{};
+    UnsignedInt StackStartAddressESP{ 0 };
+    UnsignedInt StackActualAddressEBP{ 0 };
 private:
     std::stack<StackDataType> VirtualMachineStack;
     std::vector<std::uint8_t> VirtualMachineMemory;
@@ -147,25 +150,35 @@ private:
 private:
 
     template <class T>
-    void PerformOperationForType(const VirtualCommandOperationType& OperationType, StackDataType& R1, StackDataType& R2, const VirtualCommandDataType VirtualCommandDataTypeParam)
+    void PerformOperationForType(const VirtualCodeCommand& VirtualCodeCommandToExecute, StackDataType& R1, StackDataType& R2, const VirtualCommandDataType VirtualCommandDataTypeParam)
     {
-        if (R1.Type == VirtualCommandDataTypeParam)
-            VirtualMachineStack.push(StackDataType(R1.Type, ExecuteArithmeticOperation<T>(OperationType, *static_cast<T*>(reinterpret_cast<void*>(&R1.Data)), *static_cast<T*>(reinterpret_cast<void*>(&R2.Data)))));
+        if (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::FREE && VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::RET)
+        {
+            if (R1.Type == VirtualCommandDataTypeParam)
+                VirtualMachineStack.push(StackDataType(R1.Type, ExecuteArithmeticOperation<T>(VirtualCodeCommandToExecute.Operation, *static_cast<T*>(reinterpret_cast<void*>(&R1.Data)), *static_cast<T*>(reinterpret_cast<void*>(&R2.Data)))));
+        }
+        else
+        {
+            if (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::FREE)
+                FreeMemoryForFunctionOnStack(VirtualCodeCommandToExecute);
+            if (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::RET)
+                ReturnFromFunction(VirtualCodeCommandToExecute);
+        }
     }
 
-    void PerformOperation(const VirtualCommandOperationType& OperationType)
+    void PerformOperation(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
         auto R2 = VirtualMachineStack.top();
 
         VirtualMachineStack.pop();
 
-        auto R1 = (OperationType != VirtualCommandOperationType::NEG) ? VirtualMachineStack.top() : StackDataType(VirtualMachineStack.top().Type, static_cast<RealType>(0.0));
+        auto R1 = (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::NEG) ? VirtualMachineStack.top() : StackDataType(VirtualMachineStack.top().Type, static_cast<RealType>(0.0));
 
-        if (OperationType != VirtualCommandOperationType::NEG)
+        if (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::NEG)
             VirtualMachineStack.pop();
 
         UnsignedInt TypeIndex = 0;
-        boost::mpl::for_each<ValidTypes>([&]<typename T0>(T0 TypeArg) { PerformOperationForType<T0>(OperationType, R1, R2, VirtualCommandDataTypeList[TypeIndex++]); } );
+        boost::mpl::for_each<ValidTypes>([&]<typename T0>(T0 TypeArg) { PerformOperationForType<T0>(VirtualCodeCommandToExecute, R1, R2, VirtualCommandDataTypeList[TypeIndex++]); } );
     }
 
     void ExecuteVirtualCommand(const VirtualCodeCommand& VirtualCodeCommandToExecute)
@@ -173,11 +186,19 @@ private:
         switch (VirtualCodeCommandToExecute.CommandName)
         {
             case VirtualCommandName::LDC: LoadConstantToStack(VirtualCodeCommandToExecute); break;
-            case VirtualCommandName::LDV: LoadVariableToStack(VirtualCodeCommandToExecute); break;
-            case VirtualCommandName::SVV: SaveValueFromStackToVariable(VirtualCodeCommandToExecute); break;
-            case VirtualCommandName::OPR: PerformOperation(VirtualCodeCommandToExecute.Operation); break;
-            case VirtualCommandName::CALL: Call(VirtualCodeCommandToExecute); break;
-            case VirtualCommandName::RET: Return(VirtualCodeCommandToExecute); break;
+            case VirtualCommandName::LDV: GeneralLoadVariableToStack(VirtualCodeCommandToExecute); break;
+            case VirtualCommandName::LDVFPTR: GeneralLoadVariableToStack(VirtualCodeCommandToExecute); break;
+            case VirtualCommandName::SVV: GeneralSaveValueFromStackToVariable(VirtualCodeCommandToExecute); break;
+            case VirtualCommandName::SVVFPTR: GeneralSaveValueFromStackToVariable(VirtualCodeCommandToExecute); break;
+
+            case VirtualCommandName::LDPTROFV: LoadPointerOfVariableToStack(VirtualCodeCommandToExecute); break;
+
+            case VirtualCommandName::OPR: PerformOperation(VirtualCodeCommandToExecute); break;
+
+            case VirtualCommandName::GET: GetMemoryForFunctionOnStack(VirtualCodeCommandToExecute); break;
+            case VirtualCommandName::CALL: CallFunction(VirtualCodeCommandToExecute); break;
+            case VirtualCommandName::VIRTRET: FreeMemoryForFunctionOnStack(VirtualCodeCommandToExecute); break;
+
             case VirtualCommandName::JMP: Jump(VirtualCodeCommandToExecute); break;
             case VirtualCommandName::JCON: JumpConditional(VirtualCodeCommandToExecute); break;
             case VirtualCommandName::END: ProgramRunning = false; break;
@@ -203,40 +224,89 @@ private:
     }
 
     template <class T>
-    void LoadVariableToStackForType(const VirtualCodeCommand& VirtualCodeCommandToExecute, const VirtualCommandDataType VirtualCommandDataTypeParam)
+    void LoadLocalVariableToStackForType(const VirtualCodeCommand& VirtualCodeCommandToExecute, const VirtualCommandDataType VirtualCommandDataTypeParam)
+    {
+        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataTypeParam)
+            VirtualMachineStack.push(StackDataType(VirtualCodeCommandToExecute.Type, *reinterpret_cast<T*>(VirtualMachineMemory.data() + StackActualAddressEBP + VirtualCodeCommandToExecute.TargetAddress)));
+    }
+
+    template <class T>
+    void LoadGlobalVariableFromPointerToStackForType(const VirtualCodeCommand& VirtualCodeCommandToExecute, const VirtualCommandDataType VirtualCommandDataTypeParam)
     {
         if (VirtualCodeCommandToExecute.Type == VirtualCommandDataTypeParam)
             VirtualMachineStack.push(StackDataType(VirtualCodeCommandToExecute.Type, *reinterpret_cast<T*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress)));
     }
 
-    void LoadVariableToStack(const VirtualCodeCommand& VirtualCodeCommandToExecute)
+    void GeneralLoadVariableToStack(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
         UnsignedInt TypeIndex = 0;
-        boost::mpl::for_each<ValidTypes>([&]<typename T0>(T0 TypeArg) { LoadVariableToStackForType<T0>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++]); } );
+        if (VirtualCodeCommandToExecute.Level == LOCAL_TYPE)
+            boost::mpl::for_each<ValidTypes>([&]<typename T0>(T0 TypeArg) { LoadLocalVariableToStackForType<T0>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++]); } );
+        else
+        if (VirtualCodeCommandToExecute.Level == GLOBAL_TYPE)
+            boost::mpl::for_each<ValidTypes>([&]<typename T0>(T0 TypeArg) { LoadGlobalVariableFromPointerToStackForType<T0>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++]); } );
+        else
+        if (VirtualCodeCommandToExecute.Level == CLASS_TYPE)
+        {
+        }
     }
 
     template <class T>
     void SaveValueFromStackToVariableForType(const VirtualCodeCommand& VirtualCodeCommandToExecute, const VirtualCommandDataType VirtualCommandDataTypeParam)
     {
         if (VirtualCodeCommandToExecute.Type == VirtualCommandDataTypeParam)
+            *reinterpret_cast<T*>(VirtualMachineMemory.data() + StackActualAddressEBP + VirtualCodeCommandToExecute.TargetAddress) = *static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data));
+    }
+
+    template <class T>
+    void SaveValueFromStackToVariableFromPointerForType(const VirtualCodeCommand& VirtualCodeCommandToExecute, const VirtualCommandDataType VirtualCommandDataTypeParam)
+    {
+        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataTypeParam)
             *reinterpret_cast<T*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress) = *static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data));
     }
 
-    void SaveValueFromStackToVariable(const VirtualCodeCommand& VirtualCodeCommandToExecute)
+    void GeneralSaveValueFromStackToVariable(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
         UnsignedInt TypeIndex = 0;
-        boost::mpl::for_each<ValidTypes>([&]<typename T0>(T0 TypeArg) { SaveValueFromStackToVariableForType<T0>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++]); } );
+        if (VirtualCodeCommandToExecute.Level == LOCAL_TYPE)
+            boost::mpl::for_each<ValidTypes>([&]<typename T0>(T0 TypeArg) { SaveValueFromStackToVariableForType<T0>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++]); } );
+        else
+        if (VirtualCodeCommandToExecute.Level == GLOBAL_TYPE)
+            boost::mpl::for_each<ValidTypes>([&]<typename T0>(T0 TypeArg) { SaveValueFromStackToVariableFromPointerForType<T0>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++]); } );
+        else
+        if (VirtualCodeCommandToExecute.Level == CLASS_TYPE)
+        {
+        }
 
         VirtualMachineStack.pop();
     }
 
-    void Call(const VirtualCodeCommand& VirtualCodeCommandToExecute)
+    void LoadPointerOfVariableToStack(const VirtualCodeCommand& VirtualCodeCommandToExecute)
+    {
+        VirtualMachineStack.push(StackDataType(VirtualCodeCommandToExecute.Type, VirtualCodeCommandToExecute.TargetAddress));
+    }
+
+    void GetMemoryForFunctionOnStack(const VirtualCodeCommand& VirtualCodeCommandToExecute)
+    {
+        StackStartAddressESP += VirtualCodeCommandToExecute.Value;
+        VirtualMachineStack.push(StackDataType(VirtualCommandDataType::UNSIGNED_LONG_INT_TYPE, StackActualAddressEBP));
+        StackActualAddressEBP = StackStartAddressESP;
+    }
+
+    void CallFunction(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
         VirtualMachineStack.push(StackDataType(VirtualCommandDataType::UNSIGNED_LONG_INT_TYPE, RunningVirtualCommandIndex));
         RunningVirtualCommandIndex = VirtualCodeCommandToExecute.TargetAddress;
     }
 
-    void Return(const VirtualCodeCommand& VirtualCodeCommandToExecute)
+    void FreeMemoryForFunctionOnStack(const VirtualCodeCommand& VirtualCodeCommandToExecute)
+    {
+        StackActualAddressEBP = VirtualMachineStack.top().Data.UnsignedLongIntType;
+        VirtualMachineStack.pop();
+        StackStartAddressESP -= VirtualCodeCommandToExecute.Value;
+    }
+
+    void ReturnFromFunction(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
         RunningVirtualCommandIndex = VirtualMachineStack.top().Data.UnsignedLongIntType;
         VirtualMachineStack.pop();
@@ -310,42 +380,27 @@ std::vector<VirtualCodeCommand> CreateSampleProgram()
     return
     {
         { VirtualCommandName::LDC, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 5, 0, 0, 0, 0, 0, 0 },
-        { VirtualCommandName::SVV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, 0, 0, 0, 0, 15 },
+        { VirtualCommandName::SVV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, LOCAL_TYPE, 0, 0, 0, 15 },
 
         { VirtualCommandName::LDC, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 10, 0, 0, 0, 0, 0, 0 },
         { VirtualCommandName::LDC, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 10, 0, 0, 0, 0, 0, 0 },
         { VirtualCommandName::LDC, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 20, 0, 0, 0, 0, 0, 0 },
         { VirtualCommandName::OPR, VirtualCommandOperationType::ADD, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, 0, 0, 0, 0, 0 },
         { VirtualCommandName::OPR, VirtualCommandOperationType::MUL, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, 0, 0, 0, 0, 0 },
-        { VirtualCommandName::SVV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, 0, 0, 0, 0, 20 },
+        { VirtualCommandName::SVV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, LOCAL_TYPE, 0, 0, 0, 20 },
 
         { VirtualCommandName::PRINT, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, 0, 0, 0, 0, 0 },
 
-        { VirtualCommandName::LDV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, 0, 0, 0, 0, 15 },
+        { VirtualCommandName::LDV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, LOCAL_TYPE, 0, 0, 0, 15 },
         { VirtualCommandName::LDC, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 1, 0, 0, 0, 0, 0, 0 },
         { VirtualCommandName::OPR, VirtualCommandOperationType::ADD, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, 0, 0, 0, 0, 0 },
-        { VirtualCommandName::SVV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, 0, 0, 0, 0, 15 },
+        { VirtualCommandName::SVV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, LOCAL_TYPE, 0, 0, 0, 15 },
 
-        { VirtualCommandName::LDV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, 0, 0, 0, 0, 15 },
+        { VirtualCommandName::LDV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, LOCAL_TYPE, 0, 0, 0, 15 },
         { VirtualCommandName::LDC, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 10, 0, 0, 0, 0, 0, 0 },
         { VirtualCommandName::OPR, VirtualCommandOperationType::EQU, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, 0, 0, 0, 0, 0 },
         { VirtualCommandName::JCON, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, 0, 0, 0, 0, 7 },
     };
-}
-
-void ReinterpretCastTest()
-{
-    vector<unsigned char> ByteVector(128);
-
-    cout << "REINTERPRET CAST DATA" << endl;
-
-    for (auto& Byte : ByteVector)
-        Byte = 0;
-
-    ByteVector[8] = 255;
-    ByteVector[9] = 255;
-    cout << reinterpret_cast<uint64_t*>(ByteVector.data())[1] << endl;
-    cout << *reinterpret_cast<uint64_t*>(ByteVector.data() + 8) << endl;
 }
 
 int TestVirtualMachine()

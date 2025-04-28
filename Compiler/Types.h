@@ -292,8 +292,8 @@ enum class VirtualCommandOperationType : SignedInt
     M1 = -1,
     NOP = 0,
 
-    RET = 0,
-    END = -1,
+    FREE = 0,
+    RET = -1,
     END_INLINE_INSIDE_FUNCTION  = -2,
 
     NEG = 1,

@@ -535,7 +535,7 @@ void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForOperation(const U
         AfterCall(VirtualCodeCommandIndex);
     }
     else
-    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::END)
+    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::RET)
         GenerateIntelAssemblerCodeForEndFunction(VirtualCodeCommandIndex);
     else
     if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::LN)
@@ -556,7 +556,7 @@ void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForOperation(const U
     if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::DEC && ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Kind == -100)
         GenerateIntelAssemblerCodeForCallOrIncOrDecOperations("dec eax");
     else
-    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::RET)
+    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::FREE)
         GenerateIntelAssemblerCodeForReturnFromFunctionOperation(VirtualCodeCommandIndex);
     else
     if (GenerateArithmeticalGroup1Operations(VirtualCodeCommandIndex) == false)

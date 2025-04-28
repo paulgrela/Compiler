@@ -23,7 +23,7 @@ void InlineFunctionsGenerator::MakeInline(std::vector<VirtualCodeCommand>& Parse
 
     for (UnsignedInt GeneratedVirtualCodeCommandIndex = 0; GeneratedVirtualCodeCommandIndex < NumberOfGeneratedVirtualCodeCommands; GeneratedVirtualCodeCommandIndex++)
     {
-        if (ParserGeneratedVirtualCode[GeneratedVirtualCodeCommandIndex].CommandName == VirtualCommandName::OPR && ParserGeneratedVirtualCode[GeneratedVirtualCodeCommandIndex].Operation == VirtualCommandOperationType::END)
+        if (ParserGeneratedVirtualCode[GeneratedVirtualCodeCommandIndex].CommandName == VirtualCommandName::OPR && ParserGeneratedVirtualCode[GeneratedVirtualCodeCommandIndex].Operation == VirtualCommandOperationType::RET)
             LastFunction = ParserGeneratedVirtualCode[GeneratedVirtualCodeCommandIndex + 1].LabelAddress;
 
         LabelLoop:
@@ -44,7 +44,7 @@ void InlineFunctionsGenerator::MakeInline(std::vector<VirtualCodeCommand>& Parse
 
             UnsignedInt ParserGeneratedVirtualCodeIndex2 = ParserGeneratedVirtualCodeIndex1;
 
-            while (!(ParserGeneratedVirtualCode[ParserGeneratedVirtualCodeIndex2].CommandName == VirtualCommandName::OPR && ParserGeneratedVirtualCode[ParserGeneratedVirtualCodeIndex2].Operation == VirtualCommandOperationType::END))
+            while (!(ParserGeneratedVirtualCode[ParserGeneratedVirtualCodeIndex2].CommandName == VirtualCommandName::OPR && ParserGeneratedVirtualCode[ParserGeneratedVirtualCodeIndex2].Operation == VirtualCommandOperationType::RET))
                 ParserGeneratedVirtualCodeIndex2++;
             ParserGeneratedVirtualCodeIndex2++; // przekopiuj opr -1
 
@@ -60,7 +60,7 @@ void InlineFunctionsGenerator::MakeInline(std::vector<VirtualCodeCommand>& Parse
 
                 UnsignedInt l = 0;
                 auto w = static_cast<UnsignedInt>(ParserGeneratedVirtualCode[GeneratedVirtualCodeCommandIndex].Value);
-                while (!(ParserGeneratedVirtualCodeTemporary[w].CommandName == VirtualCommandName::OPR && ParserGeneratedVirtualCodeTemporary[w].Operation == VirtualCommandOperationType::END))
+                while (!(ParserGeneratedVirtualCodeTemporary[w].CommandName == VirtualCommandName::OPR && ParserGeneratedVirtualCodeTemporary[w].Operation == VirtualCommandOperationType::RET))
                     w++;
                 for (auto k = static_cast<UnsignedInt>(ParserGeneratedVirtualCode[GeneratedVirtualCodeCommandIndex].Value); k <= w; k++, l++)
                     TemporaryFunctionVirtualCode[l] = ParserGeneratedVirtualCodeTemporary[k];
@@ -82,7 +82,7 @@ void InlineFunctionsGenerator::MakeInline(std::vector<VirtualCodeCommand>& Parse
                         TemporaryFunctionVirtualCode[FunctionVirtualCodeCommandIndex].Value = TemporaryFunctionVirtualCode[FunctionVirtualCodeCommandIndex].Value + Label * ConstantSymbolForLabelInlineToMultiply;
 
                 for (UnsignedInt FunctionIntermediateCodeCommandIndex = 0; FunctionIntermediateCodeCommandIndex <= MaxNumberOfGeneratedVirtualCodeCommands; FunctionIntermediateCodeCommandIndex++)
-                    if (TemporaryFunctionVirtualCode[FunctionIntermediateCodeCommandIndex].CommandName == VirtualCommandName::OPR && TemporaryFunctionVirtualCode[FunctionIntermediateCodeCommandIndex].Operation == VirtualCommandOperationType::RET)
+                    if (TemporaryFunctionVirtualCode[FunctionIntermediateCodeCommandIndex].CommandName == VirtualCommandName::OPR && TemporaryFunctionVirtualCode[FunctionIntermediateCodeCommandIndex].Operation == VirtualCommandOperationType::FREE)
                     {
                         TemporaryFunctionVirtualCode[FunctionIntermediateCodeCommandIndex].CommandName = VirtualCommandName::VIRTRET;
                         TemporaryFunctionVirtualCode[FunctionIntermediateCodeCommandIndex].Value = ParserGeneratedVirtualCode[GeneratedVirtualCodeCommandIndex].LabelAddress + 1;
