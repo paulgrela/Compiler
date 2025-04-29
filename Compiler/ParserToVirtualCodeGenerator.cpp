@@ -1048,7 +1048,7 @@ void ParserToVirtualCodeGenerator::ExpressionSimpleIdentifierLeftPar(UnsignedInt
         FunctionCallParameters[FuctionCallParameterIndex] = static_cast<UnsignedInt>(GetTokenSymbolForType(static_cast<VirtualCommandDataType>(NewLastTokenSymbolType)));
         if (NumberOfGeneratedVirtualCodeCommands - GeneratedIntermediateCodeCommandIndex1 == 1 && GeneratedVirtualCode[GeneratedIntermediateCodeCommandIndex1].CommandName == VirtualCommandName::LDC)
         {
-            UnsignedInt Value = GeneratedVirtualCode[GeneratedIntermediateCodeCommandIndex1].Value;
+            const UnsignedInt Value = GeneratedVirtualCode[GeneratedIntermediateCodeCommandIndex1].Value;
             NumberOfGeneratedVirtualCodeCommands = GeneratedIntermediateCodeCommandIndex1;
             GenerateVirtualCodeCommand(VirtualCommandName::LOAD, FuctionCallParameterIndex, Value);
             GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Kind = CONSTANT_TYPE;
@@ -1057,7 +1057,7 @@ void ParserToVirtualCodeGenerator::ExpressionSimpleIdentifierLeftPar(UnsignedInt
         else
         if (NumberOfGeneratedVirtualCodeCommands - GeneratedIntermediateCodeCommandIndex1 == 1 && GeneratedVirtualCode[GeneratedIntermediateCodeCommandIndex1].CommandName == VirtualCommandName::LDV)
         {
-            UnsignedInt Value = GeneratedVirtualCode[GeneratedIntermediateCodeCommandIndex1].Value;
+            const UnsignedInt Value = GeneratedVirtualCode[GeneratedIntermediateCodeCommandIndex1].Value;
             auto Type = GeneratedVirtualCode[GeneratedIntermediateCodeCommandIndex1].Type;
             UnsignedInt What = GeneratedVirtualCode[GeneratedIntermediateCodeCommandIndex1].Kind;
             NumberOfGeneratedVirtualCodeCommands = GeneratedIntermediateCodeCommandIndex1;
