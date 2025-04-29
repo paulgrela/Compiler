@@ -75,7 +75,7 @@ public:
     void ExpressionOneArgumentBitAndOrPlusOrMinusOrNotOrTilde();
 public:
     void ExpressionSimpleIdentifierLeftSquare();
-    void ExpressionSimpleIdentifierLeftPar(UnsignedInt& FuctionCallParameterIndex);
+    void ExpressionSimpleIdentifierLeftPar(UnsignedInt& FunctionCallParameterIndex);
     void ExpressionSimpleFunctionCall(std::shared_ptr<FunctionDefinition>& FunctionPointer, UnsignedInt NumberOfFunctionParameters, UnsignedInt& CallAddress, UnsignedInt& MaxOk, UnsignedInt& PosMaxOk);
     void ExpressionSimpleIdentifierRightPar(const std::shared_ptr<FunctionDefinition>& FunctionPointer, const UnsignedInt& CallAddress, UnsignedInt NumericFunctionCode, UnsignedInt PositionMaximalOK);
     void ExpressionSimpleIdentifierLeftParFunctionCallRightPar();
