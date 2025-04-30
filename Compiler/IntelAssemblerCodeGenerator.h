@@ -96,7 +96,7 @@ private:
     void GenerateIntelAssemblerCodeForStack0(UnsignedInt VirtualCodeCommandIndex);
     void GenerateIntelAssemblerCodeForSavePar(UnsignedInt VirtualCodeCommandIndex);
 
-    RealType GetProper(UnsignedInt VirtualCodeCommandIndex) const;
+    [[nodiscard]] RealType GetProperValueOrTargetAddress(UnsignedInt VirtualCodeCommandIndex) const;
 };
 
 #endif
