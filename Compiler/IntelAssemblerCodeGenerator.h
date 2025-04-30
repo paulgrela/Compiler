@@ -95,6 +95,8 @@ private:
     void GenerateIntelAssemblerCodeForNull(UnsignedInt VirtualCodeCommandIndex);
     void GenerateIntelAssemblerCodeForStack0(UnsignedInt VirtualCodeCommandIndex);
     void GenerateIntelAssemblerCodeForSavePar(UnsignedInt VirtualCodeCommandIndex);
+
+    RealType GetProper(UnsignedInt VirtualCodeCommandIndex) const;
 };
 
 #endif

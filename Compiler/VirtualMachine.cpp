@@ -204,8 +204,11 @@ private:
 
             case VirtualCommandName::JMP: Jump(VirtualCodeCommandToExecute); break;
             case VirtualCommandName::JCON: JumpConditional(VirtualCodeCommandToExecute); break;
+
             case VirtualCommandName::END: ProgramRunning = false; break;
             case VirtualCommandName::PRINT: PrintMemory(); break;
+
+            case VirtualCommandName::STACK0: break;
 
             default: throw runtime_error("Unknown instruction.");
         }

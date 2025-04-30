@@ -1,6 +1,6 @@
 
-#ifndef PARSER_TO_INTERMEDIATE_CODE_GENERATOR_H
-#define PARSER_TO_INTERMEDIATE_CODE_GENERATOR_H
+#ifndef PARSER_TO_VIRTUAL_CODE_GENERATOR_H
+#define PARSER_TO_VIRTUAL_CODE_GENERATOR_H
 
 #include <vector>
 #include <string>
@@ -172,22 +172,22 @@ public:
     [[nodiscard]] std::shared_ptr<TypeDefinition> FindType(UnsignedInt TypeCode) const;
 public:
     void CheckBalanceOfParenthesis();
-    void FillBreakContinueLabelsAddresses(UnsignedInt GeneratedIntermediateCodeCommandIndex, UnsignedInt GeneratedIntermediateCodeCommandIndexAdditional);
+    void FillBreakContinueLabelsAddresses(UnsignedInt GeneratedVirtualCodeCommandIndex, UnsignedInt GeneratedVirtualCodeCommandIndexAdditional);
     void GetNextTokenSymbol()
     {
         GeneratedLexicalAnalysisTokenPosition++;
     };
-    void InitDataForParserToIntermediateCodeGenerator();
+    void InitDataForParserToVirtualCodeGenerator();
     void PrintError(std::string_view ErrorString);
     void PrintErrorToFile(UnsignedInt PositionInFile, std::string_view ErrorString);
-    void GenerateVirtualCodeCommand(VirtualCommandName x, UnsignedInt y, RealType z, VirtualCommandOperationType Operation = VirtualCommandOperationType::NOP);
+    void GenerateVirtualCodeCommand(VirtualCommandName CommandNameParam, UnsignedInt TypeParam, RealType ValueParam, UnsignedInt TargetAddressParam, VirtualCommandOperationType OperationParam = VirtualCommandOperationType::NOP);
     void GenerateAssignOperation(VirtualCommandOperationType z);
     [[nodiscard]] std::shared_ptr<TypeDefinition> CheckType(UnsignedInt GeneratedLexicalAnalysisTokenIndex) const;
     [[nodiscard]] UnsignedInt GetSizeForTokenType(TokenSymbol TokenSymbolToGetSize) const;
     static TokenSymbol GetTokenSymbolForType(VirtualCommandDataType TypeNumericCode);
 public:
-    void GeneratePushFunctionParameters(UnsignedInt GeneratedIntermediateCodeCommandIndex);
-    void GenerateFillReturnOperationAddresses(UnsignedInt GeneratedIntermediateCodeCommandStartIndex, UnsignedInt GeneratedIntermediateCodeCommandStopIndex, UnsignedInt StackSize);
+    void GeneratePushFunctionParameters(UnsignedInt GeneratedVirtualCodeCommandIndex);
+    void GenerateFillReturnOperationAddresses(UnsignedInt GeneratedVirtualCodeCommandStartIndex, UnsignedInt GeneratedVirtualCodeCommandStopIndex, UnsignedInt StackSize);
     void GenerateFillUnknownCallAddresses();
     void GenerateFillUnknownJumpAddresses(const std::shared_ptr<FunctionDefinition>& LabelFunctionPointer, std::string_view ErrorString);
     void ChangeCodeForOptimizingJumps();

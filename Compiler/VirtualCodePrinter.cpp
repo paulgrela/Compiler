@@ -46,10 +46,67 @@ void VirtualCodePrinter::PrintVirtualCodeToFile() const
 
         fprintf(VirtualCodeFile, "%5ld  ", ParserGeneratedVirtualCode[VirtualCodeOrderIndex].Type);
 
+        // if (ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName != VirtualCommandName::OPR)
+        //     fprintf(VirtualCodeFile, "%5Lf", ParserGeneratedVirtualCode[VirtualCodeOrderIndex].Value);
+        // else
+        //     fprintf(VirtualCodeFile, "%5Lf", static_cast<long double>(ParserGeneratedVirtualCode[VirtualCodeOrderIndex].Operation));
+
+
+
+
+
+
+
+
+
+
         if (ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName != VirtualCommandName::OPR)
-            fprintf(VirtualCodeFile, "%5Lf", ParserGeneratedVirtualCode[VirtualCodeOrderIndex].Value);
+        {
+            if (ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::NTH ||
+                ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::GET ||
+                ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::LDP ||
+                ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::LDV ||
+                ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::SVV ||
+                ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::LDPTROFV ||
+                ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::LDVFPTR ||
+                ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::SVVFPTR ||
+                ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::LOAD ||
+                ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::LOADPUSH ||
+                ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::VIRTCALL ||
+                ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::VIRTRET ||
+                ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::JMP ||
+                ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::JCON ||
+                ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::JCONT ||
+                ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::JBREAK ||
+                ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::JGOTO ||
+                (ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::CALL && ParserGeneratedVirtualCode[VirtualCodeOrderIndex].TargetAddress != UINT64_MAX))
+                fprintf(VirtualCodeFile, "%5Lf", static_cast<RealType>(ParserGeneratedVirtualCode[VirtualCodeOrderIndex].TargetAddress));
+                //fprintf(VirtualCodeFile, "%5Lf %5Lf", static_cast<RealType>(ParserGeneratedVirtualCode[VirtualCodeOrderIndex].TargetAddress), ParserGeneratedVirtualCode[VirtualCodeOrderIndex].Value);
+            else
+            if (ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::CALL && ParserGeneratedVirtualCode[VirtualCodeOrderIndex].TargetAddress == UINT64_MAX)
+            {
+                const RealType R = -9999.0f;
+                fprintf(VirtualCodeFile, "%5Lf", R);
+            }
+            else
+                fprintf(VirtualCodeFile, "%5Lf", ParserGeneratedVirtualCode[VirtualCodeOrderIndex].Value);
+        }
         else
             fprintf(VirtualCodeFile, "%5Lf", static_cast<long double>(ParserGeneratedVirtualCode[VirtualCodeOrderIndex].Operation));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         if (ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::SVV)
             fprintf(VirtualCodeFile, "  %2ld", ParserGeneratedVirtualCode[VirtualCodeOrderIndex].Kind);
