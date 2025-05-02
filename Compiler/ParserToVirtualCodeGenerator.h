@@ -180,7 +180,8 @@ public:
     void InitDataForParserToVirtualCodeGenerator();
     void PrintError(std::string_view ErrorString);
     void PrintErrorToFile(UnsignedInt PositionInFile, std::string_view ErrorString);
-    void GenerateVirtualCodeCommand(VirtualCommandName CommandNameParam, UnsignedInt TypeParam, RealType ValueParam, UnsignedInt TargetAddressParam, VirtualCommandOperationType OperationParam = VirtualCommandOperationType::NOP);
+    void GenerateVirtualCodeCommand(VirtualCommandName CommandNameParam, SignedInt TypeParam, RealType ValueParam, UnsignedInt TargetAddressParam, VirtualCommandOperationType OperationParam = VirtualCommandOperationType::NOP);
+    //void GenerateVirtualCodeCommand(VirtualCommandName CommandNameParam, VirtualCommandDataType TypeParam, RealType ValueParam, UnsignedInt TargetAddressParam, VirtualCommandOperationType OperationParam = VirtualCommandOperationType::NOP);
     void GenerateAssignOperation(VirtualCommandOperationType z);
     [[nodiscard]] std::shared_ptr<TypeDefinition> CheckType(UnsignedInt GeneratedLexicalAnalysisTokenIndex) const;
     [[nodiscard]] UnsignedInt GetSizeForTokenType(TokenSymbol TokenSymbolToGetSize) const;

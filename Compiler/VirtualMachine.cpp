@@ -11,6 +11,7 @@
 
 #include "Types.h"
 #include "Constants.h"
+#include "ExceptionsMacro.h"
 
 #include "VirtualMachine.h"
 
@@ -159,8 +160,8 @@ private:
     {
         if (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::FREE && VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::RET)
         {
-            if (R1.Type == VirtualCommandDataTypeParam)
-                VirtualMachineStack.emplace(R1.Type, ExecuteArithmeticOperation<T>(VirtualCodeCommandToExecute.Operation, *static_cast<T*>(reinterpret_cast<void*>(&R1.Data)), *static_cast<T*>(reinterpret_cast<void*>(&R2.Data))));
+            //if (R1.Type == VirtualCommandDataTypeParam)
+            VirtualMachineStack.emplace(R1.Type, ExecuteArithmeticOperation<T>(VirtualCodeCommandToExecute.Operation, *static_cast<T*>(reinterpret_cast<void*>(&R1.Data)), *static_cast<T*>(reinterpret_cast<void*>(&R2.Data))));
         }
         else
         {
@@ -182,8 +183,9 @@ private:
         if (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::NEG)
             VirtualMachineStack.pop();
 
-        UnsignedInt TypeIndex = 0;
-        boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { PerformOperationForType<T>(VirtualCodeCommandToExecute, R1, R2, VirtualCommandDataTypeList[TypeIndex++]); } );
+        PerformOperationForType<int32_t>(VirtualCodeCommandToExecute, R1, R2, VirtualCommandDataType::SIGNED_INT_TYPE);
+        //UnsignedInt TypeIndex = 0;
+        //boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { PerformOperationForType<T>(VirtualCodeCommandToExecute, R1, R2, VirtualCommandDataTypeList[TypeIndex++]); } );
     }
 
 private:
@@ -193,6 +195,7 @@ private:
     {
         if (VirtualCodeCommandToExecute.Type == VirtualCommandDataTypeParam)
             VirtualMachineStack.emplace(VirtualCodeCommandToExecute.Type, static_cast<T>(VirtualCodeCommandToExecute.Value));
+            //VirtualMachineStack.emplace(VirtualCommandDataType::SIGNED_INT_TYPE, static_cast<T>(VirtualCodeCommandToExecute.Value));
     }
 
     void LoadConstantToStack(const VirtualCodeCommand& VirtualCodeCommandToExecute)
@@ -286,16 +289,24 @@ private:
 
     void ReturnFromFunction(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
-        RunningVirtualCommandIndex = VirtualMachineStack.top().Data.UnsignedLongIntType;
-        VirtualMachineStack.pop();
+        if (VirtualMachineStack.empty() == false)
+        {
+            RunningVirtualCommandIndex = VirtualMachineStack.top().Data.UnsignedLongIntType;
+            VirtualMachineStack.pop();
+        }
+        else
+        {
+            cout << "END OF PROGRAM" << endl;
+            ProgramRunning = false;
+        }
     }
 
     template <class T>
     void JumpConditionalForType(const VirtualCodeCommand& VirtualCodeCommandToExecute, const VirtualCommandDataType VirtualCommandDataTypeParam)
     {
         if (VirtualMachineStack.top().Type == VirtualCommandDataTypeParam)
-            if (*static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data)) == 0)
-                RunningVirtualCommandIndex = VirtualCodeCommandToExecute.TargetAddress;
+            if (*static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data)) == 1)
+                RunningVirtualCommandIndex = VirtualCodeCommandToExecute.TargetAddress - 1;
     }
 
     void JumpConditional(const VirtualCodeCommand& VirtualCodeCommandToExecute)
@@ -309,7 +320,7 @@ private:
 
     void Jump(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
-        RunningVirtualCommandIndex = VirtualCodeCommandToExecute.TargetAddress;
+        RunningVirtualCommandIndex = VirtualCodeCommandToExecute.TargetAddress - 1;
     }
 
 private:
@@ -376,38 +387,42 @@ private:
 
     void ExecuteVirtualCommand(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
-        switch (VirtualCodeCommandToExecute.CommandName)
+        try
         {
-            case VirtualCommandName::LDC: PrintDebugInfo("LDC", VirtualCodeCommandToExecute); LoadConstantToStack(VirtualCodeCommandToExecute); break;
+            switch (VirtualCodeCommandToExecute.CommandName)
+            {
+                case VirtualCommandName::LDC: PrintDebugInfo("LDC", VirtualCodeCommandToExecute); LoadConstantToStack(VirtualCodeCommandToExecute); break;
 
-            case VirtualCommandName::LDV: PrintDebugInfo("LDV", VirtualCodeCommandToExecute); GeneralLoadVariableToStack(VirtualCodeCommandToExecute); break;
-            case VirtualCommandName::LDVFPTR: PrintDebugInfo("LDVFPTR", VirtualCodeCommandToExecute); GeneralLoadVariableToStack(VirtualCodeCommandToExecute); break;
+                case VirtualCommandName::LDV: PrintDebugInfo("LDV", VirtualCodeCommandToExecute); GeneralLoadVariableToStack(VirtualCodeCommandToExecute); break;
+                case VirtualCommandName::LDVFPTR: PrintDebugInfo("LDVFPTR", VirtualCodeCommandToExecute); GeneralLoadVariableToStack(VirtualCodeCommandToExecute); break;
 
-            case VirtualCommandName::SVV: PrintDebugInfo("SVV", VirtualCodeCommandToExecute); GeneralSaveValueFromStackToVariable(VirtualCodeCommandToExecute); break;
-            case VirtualCommandName::SVVFPTR: PrintDebugInfo("SVVFPTR", VirtualCodeCommandToExecute); GeneralSaveValueFromStackToVariable(VirtualCodeCommandToExecute); break;
+                case VirtualCommandName::SVV: PrintDebugInfo("SVV", VirtualCodeCommandToExecute); GeneralSaveValueFromStackToVariable(VirtualCodeCommandToExecute); break;
+                case VirtualCommandName::SVVFPTR: PrintDebugInfo("SVVFPTR", VirtualCodeCommandToExecute); GeneralSaveValueFromStackToVariable(VirtualCodeCommandToExecute); break;
 
-            case VirtualCommandName::LDPTROFV: PrintDebugInfo("LDPTROFV", VirtualCodeCommandToExecute); LoadPointerOfVariableToStack(VirtualCodeCommandToExecute); break;
+                case VirtualCommandName::LDPTROFV: PrintDebugInfo("LDPTROFV", VirtualCodeCommandToExecute); LoadPointerOfVariableToStack(VirtualCodeCommandToExecute); break;
 
-            case VirtualCommandName::OPR: PrintDebugInfo("OPR", VirtualCodeCommandToExecute); PerformOperation(VirtualCodeCommandToExecute); break;
+                case VirtualCommandName::OPR: PrintDebugInfo("OPR", VirtualCodeCommandToExecute); PerformOperation(VirtualCodeCommandToExecute); break;
 
-            case VirtualCommandName::LOAD: PrintDebugInfo("LOAD", VirtualCodeCommandToExecute); GeneralLoadVariableToFunctionParametersList(VirtualCodeCommandToExecute); break;
-            case VirtualCommandName::LDP: PrintDebugInfo("LDP", VirtualCodeCommandToExecute); GeneralSaveValueFromParametersListToVariable(VirtualCodeCommandToExecute); break;
+                case VirtualCommandName::LOAD: PrintDebugInfo("LOAD", VirtualCodeCommandToExecute); GeneralLoadVariableToFunctionParametersList(VirtualCodeCommandToExecute); break;
+                case VirtualCommandName::LDP: PrintDebugInfo("LDP", VirtualCodeCommandToExecute); GeneralSaveValueFromParametersListToVariable(VirtualCodeCommandToExecute); break;
 
-            case VirtualCommandName::GET: PrintDebugInfo("GET", VirtualCodeCommandToExecute); GetMemoryForFunctionOnStack(VirtualCodeCommandToExecute); break;
-            case VirtualCommandName::CALL: PrintDebugInfo("CALL", VirtualCodeCommandToExecute); CallFunction(VirtualCodeCommandToExecute); break;
-            case VirtualCommandName::VIRTRET: PrintDebugInfo("VIRTRET", VirtualCodeCommandToExecute); FreeMemoryForFunctionOnStack(VirtualCodeCommandToExecute); break;
+                case VirtualCommandName::GET: PrintDebugInfo("GET", VirtualCodeCommandToExecute); GetMemoryForFunctionOnStack(VirtualCodeCommandToExecute); break;
+                case VirtualCommandName::CALL: PrintDebugInfo("CALL", VirtualCodeCommandToExecute); CallFunction(VirtualCodeCommandToExecute); break;
+                case VirtualCommandName::VIRTRET: PrintDebugInfo("VIRTRET", VirtualCodeCommandToExecute); FreeMemoryForFunctionOnStack(VirtualCodeCommandToExecute); break;
 
-            case VirtualCommandName::JMP: PrintDebugInfo("JMP", VirtualCodeCommandToExecute); Jump(VirtualCodeCommandToExecute); break;
-            case VirtualCommandName::JCON: PrintDebugInfo("JCON", VirtualCodeCommandToExecute); JumpConditional(VirtualCodeCommandToExecute); break;
+                case VirtualCommandName::JMP: PrintDebugInfo("JMP", VirtualCodeCommandToExecute); Jump(VirtualCodeCommandToExecute); break;
+                case VirtualCommandName::JCON: PrintDebugInfo("JCON", VirtualCodeCommandToExecute); JumpConditional(VirtualCodeCommandToExecute); break;
 
-            case VirtualCommandName::END: PrintDebugInfo("END", VirtualCodeCommandToExecute); ProgramRunning = false; break;
+                case VirtualCommandName::END: PrintDebugInfo("END", VirtualCodeCommandToExecute); ProgramRunning = false; break;
 
-            case VirtualCommandName::PRINT: PrintMemory(); break;
+                case VirtualCommandName::PRINT: PrintMemory(); break;
 
-            case VirtualCommandName::STACK0: PrintDebugInfo("STACK0", VirtualCodeCommandToExecute); break;
+                case VirtualCommandName::STACK0: PrintDebugInfo("STACK0", VirtualCodeCommandToExecute); break;
 
-            default: throw runtime_error("Unknown instruction.");
+                default: PrintMemory(); throw runtime_error("Unknown instruction");
+            }
         }
+        CATCH_COUT("instruction error")
     }
 
 public:
@@ -450,7 +465,7 @@ private:
     void PrintTopOfStackProperType(const VirtualCommandDataType VirtualCommandDataTypeParam)
     {
          if (VirtualMachineStack.empty() == false && VirtualMachineStack.top().Type == VirtualCommandDataTypeParam)
-             cout << " Top Stack Type = " << static_cast<SignedInt>(VirtualMachineStack.top().Type) << " Top Stack Value = " << static_cast<T>(*reinterpret_cast<T*>(&VirtualMachineStack.top().Data)) << " ";
+             cout << "Top Stack Type = " << static_cast<SignedInt>(VirtualMachineStack.top().Type) << " Top Stack Value = " << static_cast<T>(*reinterpret_cast<T*>(&VirtualMachineStack.top().Data));
     }
 
     void PrintTopOfStack()
@@ -466,7 +481,7 @@ public:
         for (UnsignedInt ByteIndex = 0; ByteIndex < VirtualMachineMemory.size(); ByteIndex++)
             cout << "Memory[" << to_string(ByteIndex) << "] = " << to_string(VirtualMachineMemory[ByteIndex]) << endl;
 
-        getchar();
+        //getchar();
     }
 
     void PrintStack()
@@ -488,7 +503,7 @@ public:
 
 void ExecuteProgramOnVirtualMachine(const std::vector<VirtualCodeCommand>& ProgramToExecute)
 {
-    VirtualMachine VirtualMachinObject(64);
+    VirtualMachine VirtualMachinObject(48);
 
     VirtualMachinObject.LoadProgram(ProgramToExecute);
     VirtualMachinObject.RunProgram();
@@ -519,8 +534,8 @@ std::vector<VirtualCodeCommand> CreateSampleProgram()
 
         { VirtualCommandName::LDV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, LOCAL_TYPE, 0, 0, 0, 15 },
         { VirtualCommandName::LDC, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 10, 0, 0, 0, 0, 0, 0 },
-        { VirtualCommandName::OPR, VirtualCommandOperationType::EQU, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, 0, 0, 0, 0, 0 },
-        { VirtualCommandName::JCON, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, 0, 0, 0, 0, 7 },
+        { VirtualCommandName::OPR, VirtualCommandOperationType::NEQ, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, 0, 0, 0, 0, 0 },
+        { VirtualCommandName::JCON, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, 0, 0, 0, 0, 7 + 1 },
     };
 }
 
