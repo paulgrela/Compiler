@@ -263,7 +263,11 @@ void ParserToVirtualCodeGenerator::GenerateAssignOperation(const VirtualCommandO
     }
     else
     if (GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex2].CommandName == VirtualCommandName::LDVFPTR)
-        GenerateVirtualCodeCommand(VirtualCommandName::SVVFPTR, 0, 0, 0);
+    {
+        //GenerateVirtualCodeCommand(VirtualCommandName::SVVFPTR, 0, 0, 0);
+        GenerateVirtualCodeCommand(VirtualCommandName::SVVFPTR, static_cast<SignedInt>(VirtualCommandDataType::SIGNED_INT_TYPE), 0, 0);
+        GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands].Level = GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex2].Level;//XXX
+    }
 }
 
 void ParserToVirtualCodeGenerator::GenerateAssignmentWithAdditionalActionOperationCode(const TokenSymbol Token, const UnsignedInt GeneratedVirtualCodeCommandIndex1)
@@ -298,7 +302,9 @@ void ParserToVirtualCodeGenerator::GenerateAssignmentOperationCode()
     if (GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].CommandName == VirtualCommandName::LDVFPTR)
     {
         GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].CommandName = VirtualCommandName::NUL;
-        GenerateVirtualCodeCommand(VirtualCommandName::SVVFPTR, 0, 0, 0);
+        //GenerateVirtualCodeCommand(VirtualCommandName::SVVFPTR, 0, 0, 0);
+        GenerateVirtualCodeCommand(VirtualCommandName::SVVFPTR, static_cast<SignedInt>(VirtualCommandDataType::SIGNED_INT_TYPE), 0, 0);
+        GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Level = GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 2].Level;//XXX
     }
 }
 
@@ -569,10 +575,10 @@ void ParserToVirtualCodeGenerator::ExpressionAdditive()
             const RealType p2 = GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 2].Value;
             NumberOfGeneratedVirtualCodeCommands = GeneratedVirtualCodeCommandIndex;
             if (OperationAdditive == TokenSymbol::PlusSym)
-                GenerateVirtualCodeCommand(VirtualCommandName::LDC, 0, p2 + p1, 0);
+                GenerateVirtualCodeCommand(VirtualCommandName::LDC, static_cast<SignedInt>(VirtualCommandDataType::SIGNED_INT_TYPE), p2 + p1, 0);
             else
             if (OperationAdditive == TokenSymbol::MinusSym)
-                GenerateVirtualCodeCommand(VirtualCommandName::LDC, 0, p2 - p1, 0);
+                GenerateVirtualCodeCommand(VirtualCommandName::LDC, static_cast<SignedInt>(VirtualCommandDataType::SIGNED_INT_TYPE), p2 - p1, 0);
         }
         else
         {
@@ -602,13 +608,13 @@ void ParserToVirtualCodeGenerator::ExpressionMultiplicative()
             const RealType p2 = GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 2].Value;
             NumberOfGeneratedVirtualCodeCommands = GeneratedVirtualCodeCommandIndex;
             if (OperationMultiplicative == TokenSymbol::MulSym)
-                GenerateVirtualCodeCommand(VirtualCommandName::LDC, 0, p2 * p1, 0);
+                GenerateVirtualCodeCommand(VirtualCommandName::LDC, static_cast<SignedInt>(VirtualCommandDataType::SIGNED_INT_TYPE), p2 * p1, 0);
             else
             if (OperationMultiplicative == TokenSymbol::DivSymbol)
-                GenerateVirtualCodeCommand(VirtualCommandName::LDC, 0, p2 / p1, 0);
+                GenerateVirtualCodeCommand(VirtualCommandName::LDC, static_cast<SignedInt>(VirtualCommandDataType::SIGNED_INT_TYPE), p2 / p1, 0);
             else
             if (OperationMultiplicative == TokenSymbol::ModSym)
-                GenerateVirtualCodeCommand(VirtualCommandName::LDC, 0, (UnsignedInt)p2 % (UnsignedInt)p1, 0);
+                GenerateVirtualCodeCommand(VirtualCommandName::LDC, static_cast<SignedInt>(VirtualCommandDataType::SIGNED_INT_TYPE), (UnsignedInt)p2 % (UnsignedInt)p1, 0);
         }
         else
         {
@@ -675,7 +681,7 @@ void ParserToVirtualCodeGenerator::PointerExpressionSum(const UnsignedInt& Opera
             GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Value *= SizeToMultiply;
         else
         {
-            GenerateVirtualCodeCommand(VirtualCommandName::LDC, 0, SizeToMultiply, 0);
+            GenerateVirtualCodeCommand(VirtualCommandName::LDC, static_cast<SignedInt>(VirtualCommandDataType::SIGNED_INT_TYPE), SizeToMultiply, 0);
             GenerateVirtualCodeCommand(VirtualCommandName::OPR, 0, 0, 0, VirtualCommandOperationType::MUL);
         }
         GenerateVirtualCodeCommand(VirtualCommandName::OPR, 0, 0, 0, VirtualCommandOperationType::ADD);
@@ -786,7 +792,7 @@ void ParserToVirtualCodeGenerator::ExpressionOneArgumentMulLeftPar()
     //END NAJGLEBSZY POZIOM
     while (InsidePointerExpression >= 1)
     {
-        Operation = VirtualCommandOperationType::INC;
+        Operation = VirtualCommandOperationType::NEG;
         if (GeneratedLexicalAnalysisTokens[GeneratedLexicalAnalysisTokenPosition].Symbol == TokenSymbol::PlusSym)
             Operation = VirtualCommandOperationType::ADD;
         else
@@ -853,7 +859,7 @@ void ParserToVirtualCodeGenerator::ExpressionOneArgumentSizeOf()
     if (!VariableType)
         PrintError("type to get_sizeof in parents is not declared");
 
-    GenerateVirtualCodeCommand(VirtualCommandName::LDC, 0, VariableType->Length, 0);
+    GenerateVirtualCodeCommand(VirtualCommandName::LDC, static_cast<SignedInt>(VirtualCommandDataType::SIGNED_INT_TYPE), VariableType->Length, 0);
     NewLastTokenSymbolType = TokenSymbol::SignedIntSym;
     GetNextTokenSymbol();
     if (GeneratedLexicalAnalysisTokens[GeneratedLexicalAnalysisTokenPosition].Symbol != TokenSymbol::RightParSym)
@@ -955,20 +961,20 @@ void ParserToVirtualCodeGenerator::ExpressionSuffix()
             if (GeneratedVirtualCodeCommandIndex2 - GeneratedVirtualCodeCommandIndex1 == 1 && GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].CommandName == VirtualCommandName::LDC)
             {
                 NumberOfGeneratedVirtualCodeCommands = GeneratedVirtualCodeCommandIndex1;
-                GenerateVirtualCodeCommand(VirtualCommandName::LDC, 0, MultiplyDataSize * GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands].Value, 0);
+                GenerateVirtualCodeCommand(VirtualCommandName::LDC, static_cast<SignedInt>(VirtualCommandDataType::SIGNED_INT_TYPE), MultiplyDataSize * GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands].Value, 0);
                 GenerateVirtualCodeCommand(VirtualCommandName::OPR, 0, 0, 0, VirtualCommandOperationType::ADD);
                 if (GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 3].CommandName == VirtualCommandName::OPR && GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 3].Operation == VirtualCommandOperationType::ADD && GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 4].CommandName == VirtualCommandName::LDC)
                 {
                     const RealType Operand1 = GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 4].Value;
                     const RealType Operand2 = GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 2].Value;
                     NumberOfGeneratedVirtualCodeCommands -= 4;
-                    GenerateVirtualCodeCommand(VirtualCommandName::LDC, 0, Operand1 + Operand2, 0);
+                    GenerateVirtualCodeCommand(VirtualCommandName::LDC, static_cast<SignedInt>(VirtualCommandDataType::SIGNED_INT_TYPE), Operand1 + Operand2, 0);
                     GenerateVirtualCodeCommand(VirtualCommandName::OPR, 0, 0, 0, VirtualCommandOperationType::ADD);
                 }
             }
             else
             {
-                GenerateVirtualCodeCommand(VirtualCommandName::LDC, 0, MultiplyDataSize, 0);
+                GenerateVirtualCodeCommand(VirtualCommandName::LDC, static_cast<SignedInt>(VirtualCommandDataType::SIGNED_INT_TYPE), MultiplyDataSize, 0);
                 NewLastTokenSymbolType = TokenSymbol::SignedIntSym;
                 GenerateVirtualCodeCommand(VirtualCommandName::OPR, 0, 0, 0, VirtualCommandOperationType::MUL);
                 GenerateVirtualCodeCommand(VirtualCommandName::OPR, 0, 0, 0, VirtualCommandOperationType::ADD);
@@ -1027,7 +1033,8 @@ void ParserToVirtualCodeGenerator::ExpressionSimpleIdentifierLeftSquare()
     else
     {
         GetNextTokenSymbol();
-        GenerateVirtualCodeCommand(VirtualCommandName::LDPTROFV, ArrayObject->NumberOfDimemsions, 0, ArrayObject->ArrayAddress);
+        //GenerateVirtualCodeCommand(VirtualCommandName::LDPTROFV, ArrayObject->NumberOfDimemsions, 0, ArrayObject->ArrayAddress);
+        GenerateVirtualCodeCommand(VirtualCommandName::LDPTROFV, static_cast<SignedInt>(VirtualCommandDataType::SIGNED_INT_TYPE), 0, ArrayObject->ArrayAddress);
         GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Level = Level;
         GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Index = ArrayObject->IndexToDescribeInGlobalDataArray;
         //if( level == GLOBAL_TYPE ) kod[ lr-1 ].Kind = //indeks w opis_global

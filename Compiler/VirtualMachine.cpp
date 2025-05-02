@@ -153,15 +153,14 @@ private:
         return Result;
     }
 
-private:
-
     template <class T>
     void PerformOperationForType(const VirtualCodeCommand& VirtualCodeCommandToExecute, StackDataType& R1, StackDataType& R2, const VirtualCommandDataType VirtualCommandDataTypeParam)
     {
         if (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::FREE && VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::RET)
         {
             //if (R1.Type == VirtualCommandDataTypeParam)
-            VirtualMachineStack.emplace(R1.Type, ExecuteArithmeticOperation<T>(VirtualCodeCommandToExecute.Operation, *static_cast<T*>(reinterpret_cast<void*>(&R1.Data)), *static_cast<T*>(reinterpret_cast<void*>(&R2.Data))));
+            //VirtualMachineStack.emplace(R1.Type, ExecuteArithmeticOperation<T>(VirtualCodeCommandToExecute.Operation, *static_cast<T*>(reinterpret_cast<void*>(&R1.Data)), *static_cast<T*>(reinterpret_cast<void*>(&R2.Data))));
+            VirtualMachineStack.emplace(VirtualCommandDataType::SIGNED_INT_TYPE, ExecuteArithmeticOperation<T>(VirtualCodeCommandToExecute.Operation, *static_cast<T*>(reinterpret_cast<void*>(&R1.Data)), *static_cast<T*>(reinterpret_cast<void*>(&R2.Data))));
         }
         else
         {
@@ -261,6 +260,55 @@ private:
 
         VirtualMachineStack.pop();
     }
+
+
+
+
+
+
+
+
+    template <class T>
+    void SaveValueFromStackToVariableForType1(const VirtualCodeCommand& VirtualCodeCommandToExecute, const VirtualCommandDataType VirtualCommandDataTypeParam)
+    {
+        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataTypeParam)
+        {
+            const UnsignedInt Offset = *static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data));
+            VirtualMachineStack.pop();
+            *reinterpret_cast<T*>(VirtualMachineMemory.data() + StackActualAddressEBP + Offset) = *static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data));
+        }
+    }
+
+    template <class T>
+    void SaveValueFromStackToVariableFromPointerForType1(const VirtualCodeCommand& VirtualCodeCommandToExecute, const VirtualCommandDataType VirtualCommandDataTypeParam)
+    {
+        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataTypeParam)
+        {
+            const UnsignedInt Offset = *static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data));
+            VirtualMachineStack.pop();
+            *reinterpret_cast<T*>(VirtualMachineMemory.data() + Offset) = *static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data));
+        }
+    }
+
+    void GeneralSaveValueFromStackToVariable1(const VirtualCodeCommand& VirtualCodeCommandToExecute)
+    {
+        UnsignedInt TypeIndex = 0;
+        if (VirtualCodeCommandToExecute.Level == LOCAL_TYPE)
+            boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { SaveValueFromStackToVariableForType1<T>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++]); } );
+        else
+        if (VirtualCodeCommandToExecute.Level == GLOBAL_TYPE)
+            boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { SaveValueFromStackToVariableFromPointerForType1<T>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++]); } );
+        else
+        if (VirtualCodeCommandToExecute.Level == CLASS_TYPE)
+        {
+        }
+
+        VirtualMachineStack.pop();
+    }
+
+
+
+
 
     void LoadPointerOfVariableToStack(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
@@ -397,7 +445,8 @@ private:
                 case VirtualCommandName::LDVFPTR: PrintDebugInfo("LDVFPTR", VirtualCodeCommandToExecute); GeneralLoadVariableToStack(VirtualCodeCommandToExecute); break;
 
                 case VirtualCommandName::SVV: PrintDebugInfo("SVV", VirtualCodeCommandToExecute); GeneralSaveValueFromStackToVariable(VirtualCodeCommandToExecute); break;
-                case VirtualCommandName::SVVFPTR: PrintDebugInfo("SVVFPTR", VirtualCodeCommandToExecute); GeneralSaveValueFromStackToVariable(VirtualCodeCommandToExecute); break;
+
+                case VirtualCommandName::SVVFPTR: PrintDebugInfo("SVVFPTR", VirtualCodeCommandToExecute); GeneralSaveValueFromStackToVariable1(VirtualCodeCommandToExecute); break;
 
                 case VirtualCommandName::LDPTROFV: PrintDebugInfo("LDPTROFV", VirtualCodeCommandToExecute); LoadPointerOfVariableToStack(VirtualCodeCommandToExecute); break;
 
@@ -464,8 +513,8 @@ private:
     template <class T>
     void PrintTopOfStackProperType(const VirtualCommandDataType VirtualCommandDataTypeParam)
     {
-         if (VirtualMachineStack.empty() == false && VirtualMachineStack.top().Type == VirtualCommandDataTypeParam)
-             cout << "Top Stack Type = " << static_cast<SignedInt>(VirtualMachineStack.top().Type) << " Top Stack Value = " << static_cast<T>(*reinterpret_cast<T*>(&VirtualMachineStack.top().Data));
+         if (VirtualMachineStack.empty() == false && VirtualMachineStack.top().Type == VirtualCommandDataTypeParam)//???
+             cout << "Stack Size = " << VirtualMachineStack.size() << " Top Stack Type = " << static_cast<SignedInt>(VirtualMachineStack.top().Type) << " Top Stack Value = " << static_cast<T>(*reinterpret_cast<T*>(&VirtualMachineStack.top().Data));
     }
 
     void PrintTopOfStack()
