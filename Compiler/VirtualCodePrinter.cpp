@@ -76,7 +76,7 @@ void VirtualCodePrinter::PrintVirtualCodeCommandsNamesExtendedToFile(FILE* Virtu
 
 void VirtualCodePrinter::PrintVirtualCodeToFile() const
 {
-    FILE* VirtualCodeFile = fopen("PLIK.OUT", "w+");
+    FILE* VirtualCodeFile = fopen(NameOfVirtualCodeOutputFile.c_str(), "w+");
 
     for (UnsignedInt VirtualCodeOrderIndex = 0; VirtualCodeOrderIndex < NumberOfGeneratedVirtualCodeCommands; VirtualCodeOrderIndex++)
     {

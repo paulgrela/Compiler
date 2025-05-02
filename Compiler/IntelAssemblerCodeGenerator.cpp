@@ -884,7 +884,7 @@ void IntelAssemblerCodeGenerator::PrintIntelAssemblerCodeToFile()
 
     UnsignedInt Question;
 
-    IntelAssemblerCodeFile = fopen("PLIK.OSM", "w+");
+    IntelAssemblerCodeFile = fopen(NameOfIntelAssemblerOutputFile.c_str(), "w+");
 
     PrintDataSegment();
 

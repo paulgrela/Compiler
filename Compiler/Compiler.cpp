@@ -37,13 +37,14 @@ int main(int argc, char* argv[])
     if (!strcmp("-o", argv[1]))
         InlineFunctionsGenerator::MakeInline(3, ParserToVirtualCodeGeneratorObject.NumberOfGeneratedVirtualCodeCommands, ParserToVirtualCodeGeneratorObject.GeneratedVirtualCode);
 
-    VirtualCodePrinter VirtualCodePrinterObject(ParserToVirtualCodeGeneratorObject.GeneratedVirtualCode, ParserToVirtualCodeGeneratorObject.NumberOfGeneratedVirtualCodeCommands);
+    VirtualCodePrinter VirtualCodePrinterObject(std::string(argv[num_file]) + ".OUT", ParserToVirtualCodeGeneratorObject.GeneratedVirtualCode, ParserToVirtualCodeGeneratorObject.NumberOfGeneratedVirtualCodeCommands);
     VirtualCodePrinterObject.PrintVirtualCodeToFile();
 
-    IntelAssemblerCodeGenerator IntelAssemblerCodeGeneratorObject(argv[num_file], ParserToVirtualCodeGeneratorObject.GeneratedVirtualCode, ParserToVirtualCodeGeneratorObject.NumberOfGeneratedVirtualCodeCommands, ParserToVirtualCodeGeneratorObject.StartAddressOfProgram, LexicalAnalysisTokensGeneratorObject.NumericCodeToStringSymbolsMap, LexicalAnalysisTokensGeneratorObject.ListOfConstantStrings, ParserToVirtualCodeGeneratorObject.ExternData, ParserToVirtualCodeGeneratorObject.PublicData, ParserToVirtualCodeGeneratorObject.GlobalData);
+    IntelAssemblerCodeGenerator IntelAssemblerCodeGeneratorObject(std::string(argv[num_file]) + ".OSM", ParserToVirtualCodeGeneratorObject.GeneratedVirtualCode, ParserToVirtualCodeGeneratorObject.NumberOfGeneratedVirtualCodeCommands, ParserToVirtualCodeGeneratorObject.StartAddressOfProgram, LexicalAnalysisTokensGeneratorObject.NumericCodeToStringSymbolsMap, LexicalAnalysisTokensGeneratorObject.ListOfConstantStrings, ParserToVirtualCodeGeneratorObject.ExternData, ParserToVirtualCodeGeneratorObject.PublicData, ParserToVirtualCodeGeneratorObject.GlobalData);
     IntelAssemblerCodeGeneratorObject.PrintIntelAssemblerCodeToFile();
 
     //TestVirtualMachine();
+    ExecuteProgramOnVirtualMachine(ParserToVirtualCodeGeneratorObject.GeneratedVirtualCode);
 
     return 0;
 }

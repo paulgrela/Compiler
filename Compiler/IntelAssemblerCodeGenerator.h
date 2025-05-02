@@ -15,6 +15,7 @@ private:
     std::vector<VirtualCodeCommand>& ParserGeneratedVirtualCode;
 private:
     FILE* IntelAssemblerCodeFile{};
+    std::string NameOfIntelAssemblerOutputFile{};
 private:
     std::stack<UnsignedInt> RegisterStack{};
 private:
@@ -42,10 +43,8 @@ private:
     std::vector<UnsignedInt> JumpAddresses{};
 private:
     std::unordered_map<UnsignedInt, std::string>& NumericCodeToStringSymbolsMap;
-private:
-    std::string NameOfOutputFile{};
 public:
-    IntelAssemblerCodeGenerator(const char* NameOfOutputFileParam, std::vector<VirtualCodeCommand>& ParserGeneratedVirtualCodeParam, UnsignedInt NumberOfGeneratedVirtualCodeCommandsParam, UnsignedInt StartAddressParam, std::unordered_map<UnsignedInt, std::string>& NumericCodeToStringSymbolsMapParam, std::vector<std::string>& ListOfConstantStringsParam, std::vector<CallDefinition>& ExternDataParam, std::vector<CallDefinition>& PublicDataParam, std::vector<GlobalDefinition>& GlobalDataParam) : NameOfOutputFile(NameOfOutputFileParam), ParserGeneratedVirtualCode(ParserGeneratedVirtualCodeParam), NumberOfGeneratedVirtualCodeCommands(NumberOfGeneratedVirtualCodeCommandsParam), StartAddress(StartAddressParam), NumericCodeToStringSymbolsMap(NumericCodeToStringSymbolsMapParam), ListOfConstantStrings(ListOfConstantStringsParam), ExternData(ExternDataParam), PublicData(PublicDataParam), GlobalData(GlobalDataParam)
+    IntelAssemblerCodeGenerator(std::string NameOfOutputIntelAssemblerFileParam, std::vector<VirtualCodeCommand>& ParserGeneratedVirtualCodeParam, UnsignedInt NumberOfGeneratedVirtualCodeCommandsParam, UnsignedInt StartAddressParam, std::unordered_map<UnsignedInt, std::string>& NumericCodeToStringSymbolsMapParam, std::vector<std::string>& ListOfConstantStringsParam, std::vector<CallDefinition>& ExternDataParam, std::vector<CallDefinition>& PublicDataParam, std::vector<GlobalDefinition>& GlobalDataParam) : NameOfIntelAssemblerOutputFile(std::move(NameOfOutputIntelAssemblerFileParam)), ParserGeneratedVirtualCode(ParserGeneratedVirtualCodeParam), NumberOfGeneratedVirtualCodeCommands(NumberOfGeneratedVirtualCodeCommandsParam), StartAddress(StartAddressParam), NumericCodeToStringSymbolsMap(NumericCodeToStringSymbolsMapParam), ListOfConstantStrings(ListOfConstantStringsParam), ExternData(ExternDataParam), PublicData(PublicDataParam), GlobalData(GlobalDataParam)
     {
     }
 public:

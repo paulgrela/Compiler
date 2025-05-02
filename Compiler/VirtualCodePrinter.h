@@ -6,6 +6,8 @@
 
 class VirtualCodePrinter
 {
+private:
+    std::string NameOfVirtualCodeOutputFile{};
 public:
     std::vector<VirtualCodeCommand>& ParserGeneratedVirtualCode;
     UnsignedInt NumberOfGeneratedVirtualCodeCommands;
@@ -14,7 +16,7 @@ public:
     void PrintVirtualCodeCommandsNamesToFile(FILE* VirtualCodeFile, UnsignedInt VirtualCodeOrderIndex) const;
     void PrintVirtualCodeCommandsNamesExtendedToFile(FILE* VirtualCodeFile, UnsignedInt VirtualCodeOrderIndex) const;
 public:
-    VirtualCodePrinter(std::vector<VirtualCodeCommand>& IntermediateCodeParam, const UnsignedInt NumberOfGeneratedIntermediateCodeCommandsParam) : ParserGeneratedVirtualCode(IntermediateCodeParam), NumberOfGeneratedVirtualCodeCommands(NumberOfGeneratedIntermediateCodeCommandsParam)
+    VirtualCodePrinter(std::string NameOfVirtualCodeOutputFileParam, std::vector<VirtualCodeCommand>& IntermediateCodeParam, const UnsignedInt NumberOfGeneratedIntermediateCodeCommandsParam) : NameOfVirtualCodeOutputFile(std::move(NameOfVirtualCodeOutputFileParam)), ParserGeneratedVirtualCode(IntermediateCodeParam), NumberOfGeneratedVirtualCodeCommands(NumberOfGeneratedIntermediateCodeCommandsParam)
     {
     }
 };
