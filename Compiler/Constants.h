@@ -21,9 +21,9 @@ constexpr UnsignedInt MaximalNumberOfInsideFunctionsCallForUsageOfRegisters = 30
 
 constexpr SignedInt CONSTANT_TYPE = -11;
 
-constexpr UnsignedInt CLASS_TYPE = 5000;
-constexpr UnsignedInt LOCAL_TYPE = 6000;
-constexpr UnsignedInt GLOBAL_TYPE = 7000;
+constexpr UnsignedInt CLASS_LEVEL = 5000;
+constexpr UnsignedInt LOCAL_LEVEL = 6000;
+constexpr UnsignedInt GLOBAL_LEVEL = 7000;
 
 constexpr UnsignedInt PUBLIC_TYPE = 8000;
 constexpr UnsignedInt PRIVATE_TYPE = 9000;

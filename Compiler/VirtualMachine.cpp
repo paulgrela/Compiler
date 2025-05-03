@@ -115,19 +115,26 @@ struct StackDataType
 
 class VirtualMachine
 {
+
 private:
+
     UnsignedInt MemorySize{};
     UnsignedInt StackSize{};
     UnsignedInt StackStartAddressESP{ 0 };
     UnsignedInt StackActualAddressEBP{ 0 };
+
 private:
+
     std::vector<std::uint8_t> VirtualMachineMemory;
     std::stack<StackDataType> VirtualMachineStack;
     std::list<StackDataType> VirtualMachineFunctionParametersList{};
+
 private:
+
     std::vector<VirtualCodeCommand> ProgramCodeCommandsList;
     UnsignedInt RunningVirtualCommandIndex = 0;
     bool ProgramRunning = true;
+
 private:
 
     template <class T>
@@ -156,19 +163,8 @@ private:
     template <class T>
     void PerformOperationForType(const VirtualCodeCommand& VirtualCodeCommandToExecute, StackDataType& R1, StackDataType& R2, const VirtualCommandDataType VirtualCommandDataTypeParam)
     {
-        if (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::FREE && VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::RET)
-        {
-            //if (R1.Type == VirtualCommandDataTypeParam)
-            //VirtualMachineStack.emplace(R1.Type, ExecuteArithmeticOperation<T>(VirtualCodeCommandToExecute.Operation, *static_cast<T*>(reinterpret_cast<void*>(&R1.Data)), *static_cast<T*>(reinterpret_cast<void*>(&R2.Data))));
-            VirtualMachineStack.emplace(VirtualCommandDataType::SIGNED_INT_TYPE, ExecuteArithmeticOperation<T>(VirtualCodeCommandToExecute.Operation, *static_cast<T*>(reinterpret_cast<void*>(&R1.Data)), *static_cast<T*>(reinterpret_cast<void*>(&R2.Data))));
-        }
-        else
-        {
-            if (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::FREE)
-                FreeMemoryForFunctionOnStack(VirtualCodeCommandToExecute);
-            if (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::RET)
-                ReturnFromFunction(VirtualCodeCommandToExecute);
-        }
+        if (R1.Type == VirtualCommandDataTypeParam)
+            VirtualMachineStack.emplace(R1.Type, ExecuteArithmeticOperation<T>(VirtualCodeCommandToExecute.Operation, *static_cast<T*>(reinterpret_cast<void*>(&R1.Data)), *static_cast<T*>(reinterpret_cast<void*>(&R2.Data))));
     }
 
     void PerformOperation(const VirtualCodeCommand& VirtualCodeCommandToExecute)
@@ -182,9 +178,18 @@ private:
         if (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::NEG)
             VirtualMachineStack.pop();
 
-        PerformOperationForType<int32_t>(VirtualCodeCommandToExecute, R1, R2, VirtualCommandDataType::SIGNED_INT_TYPE);
-        //UnsignedInt TypeIndex = 0;
-        //boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { PerformOperationForType<T>(VirtualCodeCommandToExecute, R1, R2, VirtualCommandDataTypeList[TypeIndex++]); } );
+        if (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::FREE && VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::RET)
+        {
+            UnsignedInt TypeIndex = 0;
+            boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { PerformOperationForType<T>(VirtualCodeCommandToExecute, R1, R2, VirtualCommandDataTypeList[TypeIndex++]); } );
+        }
+        else
+        {
+            if (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::FREE)
+                FreeMemoryForFunctionOnStack(VirtualCodeCommandToExecute);
+            if (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::RET)
+                ReturnFromFunction(VirtualCodeCommandToExecute);
+        }
     }
 
 private:
@@ -194,7 +199,6 @@ private:
     {
         if (VirtualCodeCommandToExecute.Type == VirtualCommandDataTypeParam)
             VirtualMachineStack.emplace(VirtualCodeCommandToExecute.Type, static_cast<T>(VirtualCodeCommandToExecute.Value));
-            //VirtualMachineStack.emplace(VirtualCommandDataType::SIGNED_INT_TYPE, static_cast<T>(VirtualCodeCommandToExecute.Value));
     }
 
     void LoadConstantToStack(const VirtualCodeCommand& VirtualCodeCommandToExecute)
@@ -202,6 +206,10 @@ private:
         UnsignedInt TypeIndex = 0;
         boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { LoadConstantToStackForType<T>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++]); } );
     }
+
+private:
+
+
 
     template <class T>
     void LoadLocalVariableToStackForType(const VirtualCodeCommand& VirtualCodeCommandToExecute, const VirtualCommandDataType VirtualCommandDataTypeParam)
@@ -220,100 +228,178 @@ private:
     void GeneralLoadVariableToStack(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
         UnsignedInt TypeIndex = 0;
-        if (VirtualCodeCommandToExecute.Level == LOCAL_TYPE)
+        if (VirtualCodeCommandToExecute.Level == LOCAL_LEVEL)
             boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { LoadLocalVariableToStackForType<T>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++]); } );
         else
-        if (VirtualCodeCommandToExecute.Level == GLOBAL_TYPE)
+        if (VirtualCodeCommandToExecute.Level == GLOBAL_LEVEL)
             boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { LoadGlobalVariableFromPointerToStackForType<T>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++]); } );
         else
-        if (VirtualCodeCommandToExecute.Level == CLASS_TYPE)
+        if (VirtualCodeCommandToExecute.Level == CLASS_LEVEL)
         {
         }
     }
 
     template <class T>
-    void SaveValueFromStackToVariableForType(const VirtualCodeCommand& VirtualCodeCommandToExecute, const VirtualCommandDataType VirtualCommandDataTypeParam)
+    void LoadLocalVariableFromOffsetFromStackToStackForType(const VirtualCodeCommand& VirtualCodeCommandToExecute, const VirtualCommandDataType VirtualCommandDataTypeParam)
     {
         if (VirtualCodeCommandToExecute.Type == VirtualCommandDataTypeParam)
-            *reinterpret_cast<T*>(VirtualMachineMemory.data() + StackActualAddressEBP + VirtualCodeCommandToExecute.TargetAddress) = *static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data));
+        {
+            const UnsignedInt Offset = *static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data));
+            VirtualMachineStack.pop();
+            VirtualMachineStack.emplace(VirtualCodeCommandToExecute.Type, *reinterpret_cast<T*>(VirtualMachineMemory.data() + StackActualAddressEBP + Offset));
+        }
+    }
+
+    template <class T>
+    void LoadGlobalVariableFromPointerFromOffsetFromStackToStackForType1(const VirtualCodeCommand& VirtualCodeCommandToExecute, const VirtualCommandDataType VirtualCommandDataTypeParam)
+    {
+        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataTypeParam)
+        {
+            const UnsignedInt Offset = *static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data));
+            VirtualMachineStack.pop();
+            VirtualMachineStack.emplace(VirtualCodeCommandToExecute.Type, *reinterpret_cast<T*>(VirtualMachineMemory.data() + Offset));
+        }
+    }
+
+    void GeneralLoadVariableFromOffsetFromStackToStack(const VirtualCodeCommand& VirtualCodeCommandToExecute)
+    {
+        UnsignedInt TypeIndex = 0;
+        if (VirtualCodeCommandToExecute.Level == LOCAL_LEVEL)
+            boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { LoadLocalVariableFromOffsetFromStackToStackForType<T>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++]); } );
+        else
+        if (VirtualCodeCommandToExecute.Level == GLOBAL_LEVEL)
+            boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { LoadGlobalVariableFromPointerFromOffsetFromStackToStackForType1<T>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++]); } );
+        else
+        if (VirtualCodeCommandToExecute.Level == CLASS_LEVEL)
+        {
+        }
+    }
+
+private:
+
+    template <class T>
+    void SaveValueFromStackToVariableForType(const VirtualCodeCommand& VirtualCodeCommandToExecute, const VirtualCommandDataType VirtualCommandDataTypeParam)
+    {
+        if (VirtualMachineStack.top().Type == VirtualCodeCommandToExecute.Type)
+        {
+            if (VirtualCodeCommandToExecute.Type == VirtualCommandDataTypeParam)
+                *reinterpret_cast<T*>(VirtualMachineMemory.data() + StackActualAddressEBP + VirtualCodeCommandToExecute.TargetAddress) = *static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data));
+        }
+        else
+        {
+            UnsignedInt TypeIndex = 0;
+            if (VirtualMachineStack.top().Type == VirtualCommandDataTypeParam)
+                boost::mpl::for_each<ValidTypes>([&]<typename T1>(T1 TypeArg)
+                {
+                    if (VirtualCodeCommandToExecute.Type == VirtualCommandDataTypeList[TypeIndex++])
+                        *reinterpret_cast<T1*>(VirtualMachineMemory.data() + StackActualAddressEBP + VirtualCodeCommandToExecute.TargetAddress) = static_cast<T1>(*static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data)));
+                });
+        }
     }
 
     template <class T>
     void SaveValueFromStackToVariableFromPointerForType(const VirtualCodeCommand& VirtualCodeCommandToExecute, const VirtualCommandDataType VirtualCommandDataTypeParam)
     {
-        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataTypeParam)
-            *reinterpret_cast<T*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress) = *static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data));
+        if (VirtualMachineStack.top().Type == VirtualCodeCommandToExecute.Type)
+        {
+            if (VirtualCodeCommandToExecute.Type == VirtualCommandDataTypeParam)
+                *reinterpret_cast<T*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress) = *static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data));
+        }
+        else
+        {
+            UnsignedInt TypeIndex = 0;
+            if (VirtualMachineStack.top().Type == VirtualCommandDataTypeParam)
+                boost::mpl::for_each<ValidTypes>([&]<typename T1>(T1 TypeArg)
+                {
+                    if (VirtualCodeCommandToExecute.Type == VirtualCommandDataTypeList[TypeIndex++])
+                        *reinterpret_cast<T1*>(VirtualMachineMemory.data() + VirtualCodeCommandToExecute.TargetAddress) = static_cast<T1>(*static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data)));
+                });
+        }
     }
 
     void GeneralSaveValueFromStackToVariable(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
         UnsignedInt TypeIndex = 0;
-        if (VirtualCodeCommandToExecute.Level == LOCAL_TYPE)
+        if (VirtualCodeCommandToExecute.Level == LOCAL_LEVEL)
             boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { SaveValueFromStackToVariableForType<T>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++]); } );
         else
-        if (VirtualCodeCommandToExecute.Level == GLOBAL_TYPE)
+        if (VirtualCodeCommandToExecute.Level == GLOBAL_LEVEL)
             boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { SaveValueFromStackToVariableFromPointerForType<T>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++]); } );
         else
-        if (VirtualCodeCommandToExecute.Level == CLASS_TYPE)
+        if (VirtualCodeCommandToExecute.Level == CLASS_LEVEL)
         {
         }
 
         VirtualMachineStack.pop();
     }
 
-
-
-
-
-
-
-
     template <class T>
-    void SaveValueFromStackToVariableForType1(const VirtualCodeCommand& VirtualCodeCommandToExecute, const VirtualCommandDataType VirtualCommandDataTypeParam)
+    void SaveValueFromStackToVariableFromOffsetFromStackForType(const VirtualCodeCommand& VirtualCodeCommandToExecute, const VirtualCommandDataType VirtualCommandDataTypeParam, const UnsignedInt Offset)
     {
-        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataTypeParam)
+        if (VirtualMachineStack.top().Type == VirtualCodeCommandToExecute.Type)
         {
-            const UnsignedInt Offset = *static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data));
-            VirtualMachineStack.pop();
-            *reinterpret_cast<T*>(VirtualMachineMemory.data() + StackActualAddressEBP + Offset) = *static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data));
+            if (VirtualCodeCommandToExecute.Type == VirtualCommandDataTypeParam)
+                *reinterpret_cast<T*>(VirtualMachineMemory.data() + StackActualAddressEBP + Offset) = *static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data));
+        }
+        else
+        {
+            UnsignedInt TypeIndex = 0;
+            if (VirtualMachineStack.top().Type == VirtualCommandDataTypeParam)
+                boost::mpl::for_each<ValidTypes>([&]<typename T1>(T1 TypeArg)
+                {
+                    if (VirtualCodeCommandToExecute.Type == VirtualCommandDataTypeList[TypeIndex++])
+                        *reinterpret_cast<T1*>(VirtualMachineMemory.data() + StackActualAddressEBP + Offset) = static_cast<T1>(*static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data)));
+                });
         }
     }
 
     template <class T>
-    void SaveValueFromStackToVariableFromPointerForType1(const VirtualCodeCommand& VirtualCodeCommandToExecute, const VirtualCommandDataType VirtualCommandDataTypeParam)
+    void SaveValueFromStackToVariableFromPointerFromOffsetFromStackForType(const VirtualCodeCommand& VirtualCodeCommandToExecute, const VirtualCommandDataType VirtualCommandDataTypeParam, const UnsignedInt Offset)
     {
-        if (VirtualCodeCommandToExecute.Type == VirtualCommandDataTypeParam)
+        if (VirtualMachineStack.top().Type == VirtualCodeCommandToExecute.Type)
         {
-            const UnsignedInt Offset = *static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data));
-            VirtualMachineStack.pop();
-            *reinterpret_cast<T*>(VirtualMachineMemory.data() + Offset) = *static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data));
+            if (VirtualCodeCommandToExecute.Type == VirtualCommandDataTypeParam)
+                *reinterpret_cast<T*>(VirtualMachineMemory.data() + Offset) = *static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data));
+        }
+        else
+        {
+            UnsignedInt TypeIndex = 0;
+            if (VirtualMachineStack.top().Type == VirtualCommandDataTypeParam)
+                boost::mpl::for_each<ValidTypes>([&]<typename T1>(T1 TypeArg)
+                {
+                    if (VirtualCodeCommandToExecute.Type == VirtualCommandDataTypeList[TypeIndex++])
+                        *reinterpret_cast<T1*>(VirtualMachineMemory.data() + Offset) = static_cast<T1>(*static_cast<T*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data)));
+                });
         }
     }
 
-    void GeneralSaveValueFromStackToVariable1(const VirtualCodeCommand& VirtualCodeCommandToExecute)
+    void GeneralSaveValueFromStackToVariableFromOffsetFromStack(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
+        const UnsignedInt Offset = *static_cast<UnsignedInt*>(reinterpret_cast<void*>(&VirtualMachineStack.top().Data));
+        VirtualMachineStack.pop();
+
         UnsignedInt TypeIndex = 0;
-        if (VirtualCodeCommandToExecute.Level == LOCAL_TYPE)
-            boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { SaveValueFromStackToVariableForType1<T>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++]); } );
+        if (VirtualCodeCommandToExecute.Level == LOCAL_LEVEL)
+            boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { SaveValueFromStackToVariableFromOffsetFromStackForType<T>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++], Offset); } );
         else
-        if (VirtualCodeCommandToExecute.Level == GLOBAL_TYPE)
-            boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { SaveValueFromStackToVariableFromPointerForType1<T>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++]); } );
+        if (VirtualCodeCommandToExecute.Level == GLOBAL_LEVEL)
+            boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { SaveValueFromStackToVariableFromPointerFromOffsetFromStackForType<T>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++], Offset); } );
         else
-        if (VirtualCodeCommandToExecute.Level == CLASS_TYPE)
+        if (VirtualCodeCommandToExecute.Level == CLASS_LEVEL)
         {
         }
 
         VirtualMachineStack.pop();
     }
 
-
-
-
+private:
 
     void LoadPointerOfVariableToStack(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
         VirtualMachineStack.emplace(VirtualCodeCommandToExecute.Type, VirtualCodeCommandToExecute.TargetAddress);
     }
+
+private:
 
     void GetMemoryForFunctionOnStack(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
@@ -391,13 +477,13 @@ private:
     void GeneralLoadVariableToFunctionParametersList(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
         UnsignedInt TypeIndex = 0;
-        if (VirtualCodeCommandToExecute.Level == LOCAL_TYPE)
+        if (VirtualCodeCommandToExecute.Level == LOCAL_LEVEL)
             boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { LoadLocalVariableToFunctionParametersListForType<T>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++]); } );
         else
-        if (VirtualCodeCommandToExecute.Level == GLOBAL_TYPE)
+        if (VirtualCodeCommandToExecute.Level == GLOBAL_LEVEL)
             boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { LoadGlobalVariableFromPointerToFunctionParametersListForType<T>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++]); } );
         else
-        if (VirtualCodeCommandToExecute.Level == CLASS_TYPE)
+        if (VirtualCodeCommandToExecute.Level == CLASS_LEVEL)
         {
         }
     }
@@ -420,13 +506,13 @@ private:
     void GeneralSaveValueFromParametersListToVariable(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
         UnsignedInt TypeIndex = 0;
-        if (VirtualCodeCommandToExecute.Level == LOCAL_TYPE)
+        if (VirtualCodeCommandToExecute.Level == LOCAL_LEVEL)
             boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { SaveValueFromStackToVariableForType<T>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++]); } );
         else
-        if (VirtualCodeCommandToExecute.Level == GLOBAL_TYPE)
+        if (VirtualCodeCommandToExecute.Level == GLOBAL_LEVEL)
             boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { SaveValueFromStackToVariableFromPointerForType<T>(VirtualCodeCommandToExecute, VirtualCommandDataTypeList[TypeIndex++]); } );
         else
-        if (VirtualCodeCommandToExecute.Level == CLASS_TYPE)
+        if (VirtualCodeCommandToExecute.Level == CLASS_LEVEL)
         {
         }
 
@@ -442,11 +528,10 @@ private:
                 case VirtualCommandName::LDC: PrintDebugInfo("LDC", VirtualCodeCommandToExecute); LoadConstantToStack(VirtualCodeCommandToExecute); break;
 
                 case VirtualCommandName::LDV: PrintDebugInfo("LDV", VirtualCodeCommandToExecute); GeneralLoadVariableToStack(VirtualCodeCommandToExecute); break;
-                case VirtualCommandName::LDVFPTR: PrintDebugInfo("LDVFPTR", VirtualCodeCommandToExecute); GeneralLoadVariableToStack(VirtualCodeCommandToExecute); break;
+                case VirtualCommandName::LDVFPTR: PrintDebugInfo("LDVFPTR", VirtualCodeCommandToExecute); GeneralLoadVariableFromOffsetFromStackToStack(VirtualCodeCommandToExecute); break;
 
                 case VirtualCommandName::SVV: PrintDebugInfo("SVV", VirtualCodeCommandToExecute); GeneralSaveValueFromStackToVariable(VirtualCodeCommandToExecute); break;
-
-                case VirtualCommandName::SVVFPTR: PrintDebugInfo("SVVFPTR", VirtualCodeCommandToExecute); GeneralSaveValueFromStackToVariable1(VirtualCodeCommandToExecute); break;
+                case VirtualCommandName::SVVFPTR: PrintDebugInfo("SVVFPTR", VirtualCodeCommandToExecute); GeneralSaveValueFromStackToVariableFromOffsetFromStack(VirtualCodeCommandToExecute); break;
 
                 case VirtualCommandName::LDPTROFV: PrintDebugInfo("LDPTROFV", VirtualCodeCommandToExecute); LoadPointerOfVariableToStack(VirtualCodeCommandToExecute); break;
 
@@ -513,7 +598,7 @@ private:
     template <class T>
     void PrintTopOfStackProperType(const VirtualCommandDataType VirtualCommandDataTypeParam)
     {
-         if (VirtualMachineStack.empty() == false && VirtualMachineStack.top().Type == VirtualCommandDataTypeParam)//???
+         if (VirtualMachineStack.empty() == false && VirtualMachineStack.top().Type == VirtualCommandDataTypeParam)
              cout << "Stack Size = " << VirtualMachineStack.size() << " Top Stack Type = " << static_cast<SignedInt>(VirtualMachineStack.top().Type) << " Top Stack Value = " << static_cast<T>(*reinterpret_cast<T*>(&VirtualMachineStack.top().Data));
     }
 
@@ -529,8 +614,6 @@ public:
     {
         for (UnsignedInt ByteIndex = 0; ByteIndex < VirtualMachineMemory.size(); ByteIndex++)
             cout << "Memory[" << to_string(ByteIndex) << "] = " << to_string(VirtualMachineMemory[ByteIndex]) << endl;
-
-        //getchar();
     }
 
     void PrintStack()
@@ -552,7 +635,7 @@ public:
 
 void ExecuteProgramOnVirtualMachine(const std::vector<VirtualCodeCommand>& ProgramToExecute)
 {
-    VirtualMachine VirtualMachinObject(48);
+    VirtualMachine VirtualMachinObject(42);
 
     VirtualMachinObject.LoadProgram(ProgramToExecute);
     VirtualMachinObject.RunProgram();
@@ -565,23 +648,23 @@ std::vector<VirtualCodeCommand> CreateSampleProgram()
     return
     {
         { VirtualCommandName::LDC, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 5, 0, 0, 0, 0, 0, 0 },
-        { VirtualCommandName::SVV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, LOCAL_TYPE, 0, 0, 0, 15 },
+        { VirtualCommandName::SVV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, LOCAL_LEVEL, 0, 0, 0, 15 },
 
         { VirtualCommandName::LDC, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 10, 0, 0, 0, 0, 0, 0 },
         { VirtualCommandName::LDC, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 10, 0, 0, 0, 0, 0, 0 },
         { VirtualCommandName::LDC, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 20, 0, 0, 0, 0, 0, 0 },
         { VirtualCommandName::OPR, VirtualCommandOperationType::ADD, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, 0, 0, 0, 0, 0 },
         { VirtualCommandName::OPR, VirtualCommandOperationType::MUL, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, 0, 0, 0, 0, 0 },
-        { VirtualCommandName::SVV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, LOCAL_TYPE, 0, 0, 0, 20 },
+        { VirtualCommandName::SVV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, LOCAL_LEVEL, 0, 0, 0, 20 },
 
         { VirtualCommandName::PRINT, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, 0, 0, 0, 0, 0 },
 
-        { VirtualCommandName::LDV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, LOCAL_TYPE, 0, 0, 0, 15 },
+        { VirtualCommandName::LDV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, LOCAL_LEVEL, 0, 0, 0, 15 },
         { VirtualCommandName::LDC, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 1, 0, 0, 0, 0, 0, 0 },
         { VirtualCommandName::OPR, VirtualCommandOperationType::ADD, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, 0, 0, 0, 0, 0 },
-        { VirtualCommandName::SVV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, LOCAL_TYPE, 0, 0, 0, 15 },
+        { VirtualCommandName::SVV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, LOCAL_LEVEL, 0, 0, 0, 15 },
 
-        { VirtualCommandName::LDV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, LOCAL_TYPE, 0, 0, 0, 15 },
+        { VirtualCommandName::LDV, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, LOCAL_LEVEL, 0, 0, 0, 15 },
         { VirtualCommandName::LDC, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 10, 0, 0, 0, 0, 0, 0 },
         { VirtualCommandName::OPR, VirtualCommandOperationType::NEQ, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, 0, 0, 0, 0, 0 },
         { VirtualCommandName::JCON, VirtualCommandOperationType::NOP, VirtualCommandDataType::SIGNED_INT_TYPE, 0, 0, 0, 0, 0, 0, 7 + 1 },

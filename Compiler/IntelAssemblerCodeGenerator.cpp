@@ -464,16 +464,16 @@ void IntelAssemblerCodeGenerator::GenerateConditionalOperations(const UnsignedIn
 
 void IntelAssemblerCodeGenerator::GenerateIncrementationOrDecrementationOperations(const UnsignedInt VirtualCodeCommandIndex, const std::string& ofst, const char* Str1, const char* Str2)
 {
-    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == LOCAL_TYPE)
+    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == LOCAL_LEVEL)
         fprintf(IntelAssemblerCodeFile, "%s dword ptr [ ebp ][ %ld ],1 ; %s", Str1, ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Type, Str2);
-    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == GLOBAL_TYPE)
+    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == GLOBAL_LEVEL)
         fprintf(IntelAssemblerCodeFile, "%s dword ptr %s,1 ; %s ; off=%ld", Str1, ofst.c_str(), Str2, ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Type);
     if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 1].CommandName != VirtualCommandName::LDV && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 1].CommandName != VirtualCommandName::JCONT && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 1].CommandName != VirtualCommandName::JBREAK)
         if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 1].CommandName != VirtualCommandName::STACK0)
         {
-            if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == LOCAL_TYPE)
+            if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == LOCAL_LEVEL)
                 fprintf(IntelAssemblerCodeFile, "\n%smov eax,[ ebp ][ %ld ]", SpacesTabulator, ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Type);
-            if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == GLOBAL_TYPE)
+            if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == GLOBAL_LEVEL)
                 fprintf(IntelAssemblerCodeFile, "\n%smov eax,%s ; off=%ld", SpacesTabulator, ofst.c_str(), ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Type);
             PushEAX++;
         }
@@ -579,20 +579,20 @@ void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForIncDecWithJump(co
     {
         if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Kind != -ConstantForSymbolToAdd)
         {
-            if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == LOCAL_TYPE)
+            if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == LOCAL_LEVEL)
             {
                 CountConditionalJump("[ ebp ][ ", VirtualCodeCommandIndex, IntelAssemblerCodeFile, AdditionalPrinting1);
                 log_bracket = 1;
             }
             else
-            if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == GLOBAL_TYPE)
+            if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == GLOBAL_LEVEL)
             {
                 CountConditionalJump(ofst.c_str(), VirtualCodeCommandIndex, IntelAssemblerCodeFile, AdditionalPrinting1);
                 fprintf(IntelAssemblerCodeFile, " ; off=");
                 log_bracket = 0;
             }
             else
-            if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == CLASS_TYPE)
+            if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == CLASS_LEVEL)
             {
                 fprintf(IntelAssemblerCodeFile, "mov ebx,___class_offset_ptr\n%s", SpacesTabulator);
                 CountConditionalJump("[ ebx ][ ", VirtualCodeCommandIndex, IntelAssemblerCodeFile, AdditionalPrinting1);
@@ -613,13 +613,13 @@ void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForIncDecWithJump(co
 
 void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForSavingVariable(const UnsignedInt VirtualCodeCommandIndex, const std::string& ofst)
 {
-    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == LOCAL_TYPE)
+    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == LOCAL_LEVEL)
         fprintf(IntelAssemblerCodeFile, "mov [ ebp ][ %lu ],eax ", (UnsignedInt)ParserGeneratedVirtualCode[VirtualCodeCommandIndex1].TargetAddress);
     else
-    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == GLOBAL_TYPE)
+    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == GLOBAL_LEVEL)
         fprintf(IntelAssemblerCodeFile, "mov %s,eax ; off=%lu", ofst.c_str(), (UnsignedInt)ParserGeneratedVirtualCode[VirtualCodeCommandIndex1].TargetAddress);
     else
-    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == CLASS_TYPE)
+    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == CLASS_LEVEL)
     {
         fprintf(IntelAssemblerCodeFile, "mov ebx,___class_offset_ptr\n%s", SpacesTabulator);
         fprintf(IntelAssemblerCodeFile, "mov [ ebx ][ %lu ],eax ", (UnsignedInt)ParserGeneratedVirtualCode[VirtualCodeCommandIndex1].TargetAddress);
@@ -637,19 +637,19 @@ void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForSavingVariable(co
 
 void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForLoadingAddress(const UnsignedInt VirtualCodeCommandIndex)
 {
-    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == LOCAL_TYPE)
+    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == LOCAL_LEVEL)
     {
         CountConditionalJump("ebp", VirtualCodeCommandIndex, IntelAssemblerCodeFile, AdditionalPrinting1);
         fprintf(IntelAssemblerCodeFile, "\n%sadd eax,%lu", SpacesTabulator, (UnsignedInt)ParserGeneratedVirtualCode[VirtualCodeCommandIndex].TargetAddress);
     }
     else
-    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == GLOBAL_TYPE)
+    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == GLOBAL_LEVEL)
     {
         CountConditionalJump(" ", VirtualCodeCommandIndex, IntelAssemblerCodeFile, AdditionalPrinting1);
         fprintf(IntelAssemblerCodeFile, "%lu ; tablica globalna", (UnsignedInt)ParserGeneratedVirtualCode[VirtualCodeCommandIndex].TargetAddress);
     }
     else
-    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == CLASS_TYPE)
+    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == CLASS_LEVEL)
     {
         fprintf(IntelAssemblerCodeFile, "mov ebx,___class_offset_ptr\n%s", SpacesTabulator);
         CountConditionalJump("ebx", VirtualCodeCommandIndex, IntelAssemblerCodeFile, AdditionalPrinting1);
@@ -904,7 +904,7 @@ void IntelAssemblerCodeGenerator::PrintIntelAssemblerCodeToFile()
 
         string StringOffset = "_";
 
-        if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == GLOBAL_TYPE)
+        if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Level == GLOBAL_LEVEL)
             StringOffset += GlobalData[ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Index].Name;
 
         switch (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].CommandName)

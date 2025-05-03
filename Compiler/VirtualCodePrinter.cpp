@@ -48,8 +48,8 @@ void VirtualCodePrinter::PrintVirtualCodeCommandsNamesExtendedToFile(FILE* Virtu
         case VirtualCommandName::LDV: fprintf(VirtualCodeFile, "; LoadVariableToStack"); break;
         case VirtualCommandName::SVV: fprintf(VirtualCodeFile, "; SaveValueFromStackToVariable"); break;
         case VirtualCommandName::LDPTROFV: fprintf(VirtualCodeFile, "; LoadPointerOfVariableToStack"); break;
-        case VirtualCommandName::SVVFPTR: fprintf(VirtualCodeFile, "; SaveValueFromStackToVariableFromPointer"); break;
-        case VirtualCommandName::LDVFPTR: fprintf(VirtualCodeFile, "; LoadVariableFromPointerToStack"); break;
+        case VirtualCommandName::SVVFPTR: fprintf(VirtualCodeFile, "; SaveValueFromStackToVariableFromPointerFromStack"); break;
+        case VirtualCommandName::LDVFPTR: fprintf(VirtualCodeFile, "; LoadVariableFromPointerFromStackToStack"); break;
         case VirtualCommandName::LOAD: fprintf(VirtualCodeFile, "; LOAD"); break;
         case VirtualCommandName::LOADPUSH: fprintf(VirtualCodeFile, "; LOADPUSH"); break;
         case VirtualCommandName::OPR: fprintf(VirtualCodeFile, "; OperationOnTheTopOfStack "); break;

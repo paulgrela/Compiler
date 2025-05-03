@@ -362,7 +362,7 @@ struct ArrayDefinition;
 
 struct TypeDefinition
 {
-    UnsignedInt TypeNumericCode;
+    SignedInt TypeNumericCode;
     /* if( !type_num ) nie obliczniowo rzeczywisty lub calkowity */
     /* type_num moze byc rowny np: INT_TYPE lub DOUBLE_TYPE */
     /* type_num moze byc rowny CLASS_TYPE i oznacza to typ_stucturalny ? */
