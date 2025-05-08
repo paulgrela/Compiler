@@ -1090,8 +1090,10 @@ void ParserToVirtualCodeGenerator::ExpressionSimpleIdentifierLeftPar(UnsignedInt
     ExpressionAssignment();
     FunctionCallParameters.emplace_back();
     FunctionCallParameters[FunctionCallParameterIndex] = static_cast<UnsignedInt>(GetTokenSymbolForType(static_cast<VirtualCommandDataType>(NewLastTokenSymbolType)));
-    GenerateVirtualCodeCommand(VirtualCommandName::LOAD, FunctionCallParameterIndex, 0, 0);
+    GenerateVirtualCodeCommand(VirtualCommandName::LOAD, 0, 0, 0);
     GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Inside = InsideFunctionsNextedLevel;
+    GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Index = FunctionCallParameterIndex;
+                                                GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Level = LOCAL_LEVEL;
     while (GeneratedLexicalAnalysisTokens[GeneratedLexicalAnalysisTokenPosition].Symbol == TokenSymbol::CommaSym)
     {
         FunctionCallParameterIndex++;
@@ -1103,8 +1105,11 @@ void ParserToVirtualCodeGenerator::ExpressionSimpleIdentifierLeftPar(UnsignedInt
         if (NumberOfGeneratedVirtualCodeCommands - GeneratedVirtualCodeCommandIndex1 == 1 && GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex1].CommandName == VirtualCommandName::LDC)
         {
             const UnsignedInt Value = GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex1].Value;
+            auto Type = GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex1].Type;
             NumberOfGeneratedVirtualCodeCommands = GeneratedVirtualCodeCommandIndex1;
-            GenerateVirtualCodeCommand(VirtualCommandName::LOAD, FunctionCallParameterIndex, 0, Value);
+            GenerateVirtualCodeCommand(VirtualCommandName::LOAD, static_cast<SignedInt>(Type), Value, 0);
+                                                GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Level = LOCAL_LEVEL;
+            GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Index = FunctionCallParameterIndex;
             GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Kind = CONSTANT_TYPE;
             GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Inside = InsideFunctionsNextedLevel;
         }
@@ -1113,16 +1118,21 @@ void ParserToVirtualCodeGenerator::ExpressionSimpleIdentifierLeftPar(UnsignedInt
         {
             const UnsignedInt TargetAddress = GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex1].TargetAddress;
             auto Type = GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex1].Type;
-            UnsignedInt What = GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex1].Kind;
+            const UnsignedInt What = GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex1].Kind;
             NumberOfGeneratedVirtualCodeCommands = GeneratedVirtualCodeCommandIndex1;
-            GenerateVirtualCodeCommand(VirtualCommandName::LOAD, FunctionCallParameterIndex, 0, TargetAddress);
+            GenerateVirtualCodeCommand(VirtualCommandName::LOAD, static_cast<SignedInt>(Type), 0, TargetAddress);
+            GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Index = FunctionCallParameterIndex;
+                                                GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Level = LOCAL_LEVEL;
             GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Kind = static_cast<SignedInt>(Type); // typ zmiennej
-            GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Level = What; //parametr czy lokalna
+            //GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Level = What; //parametr czy lokalna
             GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Inside = InsideFunctionsNextedLevel;
         }
         else
         {
-            GenerateVirtualCodeCommand(VirtualCommandName::LOAD, FunctionCallParameterIndex, 0, 0);
+            auto Type = GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex1].Type;
+            GenerateVirtualCodeCommand(VirtualCommandName::LOAD, static_cast<SignedInt>(Type), 0, 0);
+            GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Index = FunctionCallParameterIndex;
+                                                        GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Level = LOCAL_LEVEL;
             GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Kind = 0;
             GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Inside = InsideFunctionsNextedLevel;
         }
@@ -1727,7 +1737,8 @@ void ParserToVirtualCodeGenerator::InstructionDelete()
             GetNextTokenSymbol();
         }
         Expression();
-        GenerateVirtualCodeCommand(VirtualCommandName::LOAD, 1, 0, 0);
+        GenerateVirtualCodeCommand(VirtualCommandName::LOAD, 0, 0, 0);
+        GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Index = 1;
         GenerateVirtualCodeCommand(VirtualCommandName::CALL, -2000, 0, 0);
         if (GeneratedLexicalAnalysisTokens[GeneratedLexicalAnalysisTokenPosition].Symbol == TokenSymbol::SemicolonSym)
             GetNextTokenSymbol();
@@ -1772,7 +1783,8 @@ void ParserToVirtualCodeGenerator::InstructionNew()
             else
                 PrintError("] expected in new[]");
         }
-        GenerateVirtualCodeCommand(VirtualCommandName::LOAD, 1, 0, 0);
+        GenerateVirtualCodeCommand(VirtualCommandName::LOAD, 0, 0, 0);
+        GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Index = 1;
         GenerateVirtualCodeCommand(VirtualCommandName::CALL, -3000, 0, 0);
     }
 }
@@ -2671,15 +2683,16 @@ void ParserToVirtualCodeGenerator::GenerateFunctionIdentifierCode(const string& 
         if (FunctionDeclarationParameters.size() <= NumberOfProperFastRegisters) //num_of_par_fun = NumberOfProperFastRegisters gdy 6 parametrow
         {
             UnsignedInt StackOffset = 4; //na starcie dx=4
-            for (UnsignedInt k = 1; k < FunctionDeclarationParameters.size(); k++)
+            for (UnsignedInt FunctionParameterIndex = 1; FunctionParameterIndex < FunctionDeclarationParameters.size(); FunctionParameterIndex++)
             {
                 //te typy parametrow to problem :
                 //double,extended,strukturo_classy i tablice
-                const auto TypeObject = FindType(FunctionDeclarationParameters[k]);
+                const auto TypeObject = FindType(FunctionDeclarationParameters[FunctionParameterIndex]);
                 if (TypeObject != nullptr) //CORRECTA powoduje blad - nie generuje np: dla proba( , UnsignedInt& r )
                 {
-                    GenerateVirtualCodeCommand(VirtualCommandName::LDP, k, 0, TypeObject->TypeNumericCode);
-                    GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Kind = StackOffset;
+                    GenerateVirtualCodeCommand(VirtualCommandName::LDP, TypeObject->TypeNumericCode, 0, StackOffset);
+                    GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Kind = FunctionParameterIndex;
+
                     StackOffset += TypeObject->Length;
                 }
             }

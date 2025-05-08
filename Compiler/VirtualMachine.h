@@ -4,6 +4,6 @@
 
 int TestVirtualMachine();
 
-void ExecuteProgramOnVirtualMachine(const std::vector<VirtualCodeCommand>& ProgramToExecute);
+void ExecuteProgramOnVirtualMachine(const std::vector<VirtualCodeCommand>& ProgramToExecute, UnsignedInt StartVirtualCommandAddress);
 
 #endif

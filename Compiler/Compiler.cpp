@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
     }
 
     if (std::string(argv[3]) == "-e")
-        ExecuteProgramOnVirtualMachine(ParserToVirtualCodeGeneratorObject.GeneratedVirtualCode);
+        ExecuteProgramOnVirtualMachine(ParserToVirtualCodeGeneratorObject.GeneratedVirtualCode, 15);
 
     //TestVirtualMachine();
 
