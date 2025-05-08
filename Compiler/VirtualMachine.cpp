@@ -401,8 +401,7 @@ private:
 
     void GetMemoryForFunctionOnStack(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
-        //StackStartAddressESP += static_cast<UnsignedInt>(VirtualCodeCommandToExecute.Value);
-        StackStartAddressESP += static_cast<UnsignedInt>(VirtualCodeCommandToExecute.TargetAddress);
+        StackStartAddressESP -= static_cast<UnsignedInt>(VirtualCodeCommandToExecute.TargetAddress);
         VirtualMachineStack.emplace(VirtualCommandDataType::UNSIGNED_LONG_INT_TYPE, StackActualAddressEBP);
         StackActualAddressEBP = StackStartAddressESP;
     }
@@ -417,7 +416,7 @@ private:
     {
         StackActualAddressEBP = VirtualMachineStack.top().Data.UnsignedLongIntType;
         VirtualMachineStack.pop();
-        StackStartAddressESP -= static_cast<UnsignedInt>(VirtualCodeCommandToExecute.Value);
+        StackStartAddressESP += static_cast<UnsignedInt>(VirtualCodeCommandToExecute.Value);
     }
 
     void ReturnFromFunction(const VirtualCodeCommand& VirtualCodeCommandToExecute)
@@ -696,14 +695,14 @@ public:
         cout << "STACK END" << endl;
     }
 
-    explicit VirtualMachine(const UnsignedInt MemorySizeParam, const UnsignedInt StartVirtualCommandAddress) : MemorySize(MemorySizeParam), VirtualMachineMemory(MemorySize), RunningVirtualCommandIndex(StartVirtualCommandAddress)
+    explicit VirtualMachine(const UnsignedInt MemorySizeParam, const UnsignedInt StartVirtualCommandAddress) : MemorySize(MemorySizeParam), VirtualMachineMemory(MemorySize), RunningVirtualCommandIndex(StartVirtualCommandAddress), StackStartAddressESP(MemorySizeParam), StackActualAddressEBP(MemorySizeParam)
     {
     }
 };
 
 void ExecuteProgramOnVirtualMachine(const std::vector<VirtualCodeCommand>& ProgramToExecute, const UnsignedInt StartVirtualCommandAddress)
 {
-    VirtualMachine VirtualMachinObject(64, StartVirtualCommandAddress);
+    VirtualMachine VirtualMachinObject(136, StartVirtualCommandAddress);
 
     VirtualMachinObject.LoadProgram(ProgramToExecute);
     VirtualMachinObject.RunProgram();
