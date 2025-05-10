@@ -756,21 +756,13 @@ void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForNoRet(const Unsig
    else
        AdditionalPrinting1 = 0;
 
-    //dodane 3 marca start
-    if (
-        //!((PushEAX >= 1 && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 1].CommandName == VirtualCommandName::OPR && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 1].Operation == VirtualCommandOperationType::END_INLINE_INSIDE_FUNCTION) &&
-        !((PushEAX >= 1 && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 1].Operation == VirtualCommandOperationType::END_INLINE_INSIDE_FUNCTION) &&
+    if (!(PushEAX >= 1 && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 1].Operation == VirtualCommandOperationType::END_INLINE_INSIDE_FUNCTION &&
         (ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].CommandName == VirtualCommandName::SVV
         || ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].CommandName == VirtualCommandName::LOAD
         || ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].CommandName == VirtualCommandName::LDV
         || ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].CommandName == VirtualCommandName::LDC //problematyczne
-        //|| (ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].CommandName == VirtualCommandName::OPR && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].TargetAddress != 0 && static_cast<SignedInt>(ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].Type) == 0))))
-        //|| (ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].CommandName == VirtualCommandName::RET && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].TargetAddress != 0 && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].Size == 0)
-        //|| (ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].CommandName == VirtualCommandName::FREE)
-        //|| (ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].CommandName == VirtualCommandName::OPR && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].TargetAddress != 0 && static_cast<SignedInt>(ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].Type) == 0))))
         )))
         PushEAX--;
-    //dodane 3 marca end
 }
 
 void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForUnconditionalJump(const UnsignedInt VirtualCodeCommandIndex)
