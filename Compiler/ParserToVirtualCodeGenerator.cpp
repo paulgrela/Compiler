@@ -199,6 +199,7 @@ void ParserToVirtualCodeGenerator::GenerateVirtualCodeCommand(const VirtualComma
     GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands].Value = ValueParam;
     GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands].TargetAddress = TargetAddressParam;
     GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands].LabelAddress = NumberOfGeneratedVirtualCodeCommands;
+    GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands].Size = 0;
     NumberOfGeneratedVirtualCodeCommands++;
 }
 
@@ -1799,7 +1800,8 @@ void ParserToVirtualCodeGenerator::JumpInstruction()
         else
         {
             Expression();
-            GenerateVirtualCodeCommand(VirtualCommandName::OPR, 0, 0, 0, VirtualCommandOperationType::FREE);
+            //GenerateVirtualCodeCommand(VirtualCommandName::OPR, 0, 0, 0, VirtualCommandOperationType::FREE);
+            GenerateVirtualCodeCommand(VirtualCommandName::FREE, 0, 0, 0);
             if (GeneratedLexicalAnalysisTokens[GeneratedLexicalAnalysisTokenPosition].Symbol == TokenSymbol::SemicolonSym)
                 GetNextTokenSymbol();
             else
@@ -2153,15 +2155,18 @@ void ParserToVirtualCodeGenerator::FunctionDeclaration(const UnsignedInt IsInlin
     GeneratePushFunctionParameters(LocalGeneratedVirtualCodeCommandsPositionIndex);
     if (ProgramFunctionPointer)
         GeneratedVirtualCode[LocalGeneratedVirtualCodeCommandsPositionIndex].Type = static_cast<VirtualCommandDataType>(ProgramFunctionPointer->ParametersTypes[0]);
-    if (ProgramFunctionPointer && !(GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].CommandName == VirtualCommandName::OPR && GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Operation == VirtualCommandOperationType::FREE))
+    //if (ProgramFunctionPointer && !(GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].CommandName == VirtualCommandName::OPR && GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Operation == VirtualCommandOperationType::FREE))
+    if (ProgramFunctionPointer && !(GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].CommandName == VirtualCommandName::FREE))
     {
-        GenerateVirtualCodeCommand(VirtualCommandName::OPR, 0, 0, 0, VirtualCommandOperationType::FREE);
+        //GenerateVirtualCodeCommand(VirtualCommandName::OPR, 0, 0, 0, VirtualCommandOperationType::FREE);
+        GenerateVirtualCodeCommand(VirtualCommandName::FREE, 0, 0, 0);
         if (RememberedTokenSymbol != TokenSymbol::VoidSym)
             PrintError("return expression expected");
     }
     if (ProgramFunctionPointer)
     {
-        GenerateVirtualCodeCommand(VirtualCommandName::OPR, ProgramFunctionPointer->ParametersTypes[0], 0, 0, VirtualCommandOperationType::RET);
+        //GenerateVirtualCodeCommand(VirtualCommandName::OPR, ProgramFunctionPointer->ParametersTypes[0], 0, 0, VirtualCommandOperationType::RET);
+        GenerateVirtualCodeCommand(VirtualCommandName::RET, ProgramFunctionPointer->ParametersTypes[0], 0, 0);
         GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands - 1].Level = NumberOfFunctionsOverloaded;
     }
 
@@ -2248,8 +2253,10 @@ void ParserToVirtualCodeGenerator::ParserToVirtualCodeGenerationUnit() //pierwsz
 void ParserToVirtualCodeGenerator::GenerateFillReturnOperationAddresses(const UnsignedInt GeneratedVirtualCodeCommandStartIndex, const UnsignedInt GeneratedVirtualCodeCommandStopIndex, const UnsignedInt StackSize)
 {
     for (UnsignedInt GeneratedVirtualCodeCommandIndex = GeneratedVirtualCodeCommandStartIndex; GeneratedVirtualCodeCommandIndex <= GeneratedVirtualCodeCommandStopIndex; GeneratedVirtualCodeCommandIndex++)
-        if (GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex].CommandName == VirtualCommandName::OPR && GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex].Type == static_cast<VirtualCommandDataType>(0) && GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex].Operation == VirtualCommandOperationType::FREE)
-            GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex].Type = static_cast<VirtualCommandDataType>(StackSize + SumOfParametersLength);
+        //if (GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex].CommandName == VirtualCommandName::OPR && GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex].Type == static_cast<VirtualCommandDataType>(0) && GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex].Operation == VirtualCommandOperationType::FREE)
+            //GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex].Type = static_cast<VirtualCommandDataType>(StackSize + SumOfParametersLength);
+        if (GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex].CommandName == VirtualCommandName::FREE && GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex].Size == 0)
+            GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex].Size = StackSize + SumOfParametersLength;
 }
 
 void ParserToVirtualCodeGenerator::GeneratePushFunctionParameters(const UnsignedInt GeneratedVirtualCodeCommandIndex)

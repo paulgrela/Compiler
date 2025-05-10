@@ -232,6 +232,7 @@ struct LexicalAnalysisTokenSymbol
 enum class VirtualCommandName : UnsignedInt
 {
     GET,
+    FREE,
     LDP,
     LDC,
     LDV,
@@ -243,6 +244,7 @@ enum class VirtualCommandName : UnsignedInt
     LOADPUSH,
     OPR,
     CALL,
+    RET,
     JMP,
     JCON,
     JGOTO,
@@ -260,7 +262,6 @@ enum class VirtualCommandName : UnsignedInt
     NOP,
     NTH,
     END,
-    RET,
     PRINT,
 };
 
@@ -292,8 +293,6 @@ enum class VirtualCommandOperationType : SignedInt
     M1 = -1,
     NOP = 0,
 
-    FREE = 0,
-    RET = -1,
     END_INLINE_INSIDE_FUNCTION  = -2,
 
     NEG = 1,
@@ -344,6 +343,7 @@ struct VirtualCodeCommand
     VirtualCommandDataType Type;
     RealType Value;
     SignedInt Kind;
+    UnsignedInt Size;
     UnsignedInt Level;
     UnsignedInt Index;
     UnsignedInt Inside;

@@ -187,7 +187,7 @@ void IntelAssemblerCodeGenerator::AfterCall(UnsignedInt VirtualCodeCommandIndex)
 }
 
 
-void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForFunctionStackReserveOperation(const UnsignedInt VirtualCodeCommandIndex) const
+void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForFunctionStackReserveOperation(const UnsignedInt VirtualCodeCommandIndex) //const
 {
     const auto SymbolInt = NumericCodeToStringSymbolsMap.find(static_cast<SignedInt>(ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Type));
     if (SymbolInt != NumericCodeToStringSymbolsMap.end() && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 1].LabelAddress < ConstantForPointerToMultiply)
@@ -204,6 +204,8 @@ void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForFunctionStackRese
         for (UnsignedInt ln = 1; ln <= ls; ln++)
             fprintf(IntelAssemblerCodeFile, " ");
         fprintf(IntelAssemblerCodeFile, "PROC\n");
+
+        PushEAX = 0;
     }
     else
         if (SymbolInt != NumericCodeToStringSymbolsMap.end() && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 1].LabelAddress >= ConstantForPointerToMultiply)
@@ -482,7 +484,7 @@ void IntelAssemblerCodeGenerator::GenerateIncrementationOrDecrementationOperatio
 
 void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForEndFunction(const UnsignedInt VirtualCodeCommandIndex)
 {
-    if (auto SymbolInt = NumericCodeToStringSymbolsMap.find(static_cast<SignedInt>(ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Type)); SymbolInt != NumericCodeToStringSymbolsMap.end())
+    if (const auto SymbolInt = NumericCodeToStringSymbolsMap.find(static_cast<SignedInt>(ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Type)); SymbolInt != NumericCodeToStringSymbolsMap.end())
     {
         fprintf(IntelAssemblerCodeFile, ";\n");
         UnsignedInt ls = NumberOfSpacesToAlignAssemblerCommandInFile - (strlen(SymbolInt->second.c_str()) + 1);
@@ -527,7 +529,7 @@ void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForCallOrIncOrDecOpe
 
 void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForReturnFromFunctionOperation(const UnsignedInt VirtualCodeCommandIndex)
 {
-    fprintf(IntelAssemblerCodeFile, "pop ebp\n%sadd esp,%ld\n%sret", SpacesTabulator, ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Type, SpacesTabulator);
+    fprintf(IntelAssemblerCodeFile, "pop ebp\n%sadd esp,%ld\n%sret", SpacesTabulator, ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Size, SpacesTabulator);
     AdditionalPrinting1 = 0;
     if (PushEAX == 1)
         PushEAX--;
@@ -535,17 +537,6 @@ void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForReturnFromFunctio
 
 void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForOperation(const UnsignedInt VirtualCodeCommandIndex, const std::string& ofst)
 {
-    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::END_INLINE_INSIDE_FUNCTION)
-    {
-        fprintf(IntelAssemblerCodeFile, ";");
-        AdditionalPrinting1 = 0;
-        RegisterStack.pop();
-        AfterCall(VirtualCodeCommandIndex);
-    }
-    else
-    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::RET)
-        GenerateIntelAssemblerCodeForEndFunction(VirtualCodeCommandIndex);
-    else
     if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::LN)
         GenerateIntelAssemblerCodeForCallOrIncOrDecOperations(";call ln ; ln( eax )");
     else
@@ -563,9 +554,6 @@ void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForOperation(const U
     else
     if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::DEC && ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Kind == -100)
         GenerateIntelAssemblerCodeForCallOrIncOrDecOperations("dec eax");
-    else
-    if (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Operation == VirtualCommandOperationType::FREE)
-        GenerateIntelAssemblerCodeForReturnFromFunctionOperation(VirtualCodeCommandIndex);
     else
     if (GenerateArithmeticalGroup1Operations(VirtualCodeCommandIndex) == false)
         if (GenerateArithmeticalGroup2Operations(VirtualCodeCommandIndex) == false)
@@ -762,18 +750,25 @@ void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForGettingMemoryOnSt
 
 void IntelAssemblerCodeGenerator::GenerateIntelAssemblerCodeForNoRet(const UnsignedInt VirtualCodeCommandIndex)
 {
-    fprintf(IntelAssemblerCodeFile, "pop ebp\n%sadd esp,%ld\n%s", SpacesTabulator, ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Type, SpacesTabulator);
-    if (!(ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 1].CommandName == VirtualCommandName::OPR && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 1].Operation == VirtualCommandOperationType::END_INLINE_INSIDE_FUNCTION))
+    fprintf(IntelAssemblerCodeFile, "pop ebp\n%sadd esp,%ld\n%s", SpacesTabulator, ParserGeneratedVirtualCode[VirtualCodeCommandIndex].Size, SpacesTabulator);
+    if (!(ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 1].Operation == VirtualCommandOperationType::END_INLINE_INSIDE_FUNCTION))
         fprintf(IntelAssemblerCodeFile, "jmp l");
-    else
-        AdditionalPrinting1 = 0;
+   else
+       AdditionalPrinting1 = 0;
+
     //dodane 3 marca start
-    if (!((PushEAX >= 1 && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 1].CommandName == VirtualCommandName::OPR && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 1].Operation == VirtualCommandOperationType::END_INLINE_INSIDE_FUNCTION) &&
+    if (
+        //!((PushEAX >= 1 && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 1].CommandName == VirtualCommandName::OPR && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 1].Operation == VirtualCommandOperationType::END_INLINE_INSIDE_FUNCTION) &&
+        !((PushEAX >= 1 && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 1].Operation == VirtualCommandOperationType::END_INLINE_INSIDE_FUNCTION) &&
         (ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].CommandName == VirtualCommandName::SVV
         || ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].CommandName == VirtualCommandName::LOAD
         || ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].CommandName == VirtualCommandName::LDV
         || ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].CommandName == VirtualCommandName::LDC //problematyczne
-        || (ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].CommandName == VirtualCommandName::OPR && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].TargetAddress != 0 && static_cast<SignedInt>(ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].Type) == 0))))
+        //|| (ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].CommandName == VirtualCommandName::OPR && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].TargetAddress != 0 && static_cast<SignedInt>(ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].Type) == 0))))
+        //|| (ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].CommandName == VirtualCommandName::RET && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].TargetAddress != 0 && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].Size == 0)
+        //|| (ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].CommandName == VirtualCommandName::FREE)
+        //|| (ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].CommandName == VirtualCommandName::OPR && ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].TargetAddress != 0 && static_cast<SignedInt>(ParserGeneratedVirtualCode[VirtualCodeCommandIndex + 2].Type) == 0))))
+        )))
         PushEAX--;
     //dodane 3 marca end
 }
@@ -910,6 +905,7 @@ void IntelAssemblerCodeGenerator::PrintIntelAssemblerCodeToFile()
         switch (ParserGeneratedVirtualCode[VirtualCodeCommandIndex].CommandName)
         {
             case VirtualCommandName::GET: GenerateIntelAssemblerCodeForGettingMemoryOnStack(VirtualCodeCommandIndex); break;
+            case VirtualCommandName::FREE: GenerateIntelAssemblerCodeForReturnFromFunctionOperation(VirtualCodeCommandIndex); break;
             case VirtualCommandName::LDP: GenerateIntelAssemblerCodeForSavePar(VirtualCodeCommandIndex); break;
             case VirtualCommandName::LDC: GenerateIntelAssemblerCodeForSta(VirtualCodeCommandIndex); break;
             case VirtualCommandName::LDV: GenerateIntelAssemblerCodeForIncDecWithJump(VirtualCodeCommandIndex, StringOffset, Question, PrintAdditionalBracket); break;
@@ -921,6 +917,7 @@ void IntelAssemblerCodeGenerator::PrintIntelAssemblerCodeToFile()
             case VirtualCommandName::LOADPUSH: GenerateIntelAssemblerCodeForLoadingPushing(VirtualCodeCommandIndex); break;
             case VirtualCommandName::OPR: GenerateIntelAssemblerCodeForOperation(VirtualCodeCommandIndex, StringOffset); break;
             case VirtualCommandName::CALL: GenerateIntelAssemblerCodeForCallingFunction(VirtualCodeCommandIndex); break;
+            case VirtualCommandName::RET: GenerateIntelAssemblerCodeForEndFunction(VirtualCodeCommandIndex); break;
             case VirtualCommandName::JMP: GenerateIntelAssemblerCodeForUnconditionalJump(VirtualCodeCommandIndex); break;
             case VirtualCommandName::JGOTO: fprintf(IntelAssemblerCodeFile, "jmp l"); break;
             case VirtualCommandName::JCONT: fprintf(IntelAssemblerCodeFile, "jmp l"); break;

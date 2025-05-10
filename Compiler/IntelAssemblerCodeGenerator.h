@@ -57,7 +57,7 @@ private:
     void SetFunctionParameters();
     void SetFunctionParametersUsageArrayToZero();
     void AfterCall(UnsignedInt i);
-    void GenerateIntelAssemblerCodeForFunctionStackReserveOperation(UnsignedInt VirtualCodeCommandIndex) const;
+    void GenerateIntelAssemblerCodeForFunctionStackReserveOperation(UnsignedInt VirtualCodeCommandIndex);
     void InitRegistersParameters();
     void PrintExternVariablesDeclarations() const;
     void PrintPublicVariablesDeclarations() const;

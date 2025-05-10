@@ -7,6 +7,7 @@ void VirtualCodePrinter::PrintVirtualCodeCommandsNamesToFile(FILE* VirtualCodeFi
     switch (ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName)
     {
         case VirtualCommandName::GET: fprintf(VirtualCodeFile, "GET "); break;
+        case VirtualCommandName::FREE: fprintf(VirtualCodeFile, "FREE "); break;
         case VirtualCommandName::LDP: fprintf(VirtualCodeFile, "LDP "); break;
         case VirtualCommandName::LDC: fprintf(VirtualCodeFile, "LDC "); break;
         case VirtualCommandName::LDV: fprintf(VirtualCodeFile, "LDV "); break;
@@ -18,6 +19,7 @@ void VirtualCodePrinter::PrintVirtualCodeCommandsNamesToFile(FILE* VirtualCodeFi
         case VirtualCommandName::LOADPUSH: fprintf(VirtualCodeFile, "LOADPUSH "); break;
         case VirtualCommandName::OPR: fprintf(VirtualCodeFile, "OPR "); break;
         case VirtualCommandName::CALL: fprintf(VirtualCodeFile, "CALL "); break;
+        case VirtualCommandName::RET: fprintf(VirtualCodeFile, "RET "); break;
         case VirtualCommandName::JMP: fprintf(VirtualCodeFile, "JMP "); break;
         case VirtualCommandName::JCON: fprintf(VirtualCodeFile, "JCON "); break;
         case VirtualCommandName::JGOTO: fprintf(VirtualCodeFile, "JGOTO "); break;
@@ -43,6 +45,7 @@ void VirtualCodePrinter::PrintVirtualCodeCommandsNamesExtendedToFile(FILE* Virtu
     switch (ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName)
     {
         case VirtualCommandName::GET: fprintf(VirtualCodeFile, "; GetMemoryOnStackForParameters"); break;
+        case VirtualCommandName::FREE: fprintf(VirtualCodeFile, "; FreeMemoryOnStackForParameters"); break;
         case VirtualCommandName::LDP: fprintf(VirtualCodeFile, "; LoadFunctionParameterToStack"); break;
         case VirtualCommandName::LDC: fprintf(VirtualCodeFile, "; LoadConstantValueToStack"); break;
         case VirtualCommandName::LDV: fprintf(VirtualCodeFile, "; LoadVariableToStack"); break;
@@ -54,6 +57,7 @@ void VirtualCodePrinter::PrintVirtualCodeCommandsNamesExtendedToFile(FILE* Virtu
         case VirtualCommandName::LOADPUSH: fprintf(VirtualCodeFile, "; LOADPUSH"); break;
         case VirtualCommandName::OPR: fprintf(VirtualCodeFile, "; OperationOnTheTopOfStack "); break;
         case VirtualCommandName::CALL: fprintf(VirtualCodeFile, "; CallFunction"); break;
+        case VirtualCommandName::RET: fprintf(VirtualCodeFile, "; ReturnFromFunction"); break;
         case VirtualCommandName::JMP: fprintf(VirtualCodeFile, "; JumpUnconditional"); break;
         case VirtualCommandName::JCON: fprintf(VirtualCodeFile, "; JumpConditional"); break;
         case VirtualCommandName::JGOTO: fprintf(VirtualCodeFile, "; JumpGoto"); break;
@@ -100,12 +104,12 @@ void VirtualCodePrinter::PrintVirtualCodeToFile() const
                 ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::LOAD ||
                 ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::LOADPUSH ||
                 ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::VIRTCALL ||
-                ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::VIRTRET ||
                 ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::JMP ||
                 ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::JCON ||
                 ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::JCONT ||
                 ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::JBREAK ||
                 ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::JGOTO ||
+                ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::RET ||
                 (ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::CALL && ParserGeneratedVirtualCode[VirtualCodeOrderIndex].TargetAddress != UINT64_MAX))
                 fprintf(VirtualCodeFile, "%5Lf", static_cast<RealType>(ParserGeneratedVirtualCode[VirtualCodeOrderIndex].TargetAddress));
             else
@@ -114,6 +118,12 @@ void VirtualCodePrinter::PrintVirtualCodeToFile() const
                 const RealType R = -9999.0f;
                 fprintf(VirtualCodeFile, "%5Lf", R);
             }
+            else
+            if (ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::FREE)
+                fprintf(VirtualCodeFile, "%5lu", ParserGeneratedVirtualCode[VirtualCodeOrderIndex].Size);
+            else
+            if (ParserGeneratedVirtualCode[VirtualCodeOrderIndex].CommandName == VirtualCommandName::VIRTRET)
+                fprintf(VirtualCodeFile, "%lu  %5Lf", ParserGeneratedVirtualCode[VirtualCodeOrderIndex].Size, static_cast<RealType>(ParserGeneratedVirtualCode[VirtualCodeOrderIndex].TargetAddress));
             else
                 fprintf(VirtualCodeFile, "%5Lf", ParserGeneratedVirtualCode[VirtualCodeOrderIndex].Value);
         }

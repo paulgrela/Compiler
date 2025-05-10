@@ -129,13 +129,11 @@ private:
     std::stack<StackDataType> VirtualMachineStack;
     std::stack<StackDataType> VirtualMachineFunctionParametersStack{};
     std::stack<StackDataType> VirtualMachineFunctionCallAddressesStack{};
-    StackDataType FunctionReturnValue { VirtualCommandDataType::EXTENDED_TYPE, 0 };
 private:
 
     std::vector<VirtualCodeCommand> ProgramCodeCommandsList;
     UnsignedInt RunningVirtualCommandIndex = 0;
     bool IncrementRunningVirtualCommandIndex = true;
-    bool LastExecutedVirtualCommandIsReturnFromFunctionBool = false;
     bool ProgramRunning = true;
 
 private:
@@ -172,28 +170,28 @@ private:
 
     void PerformOperation(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
-        if (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::FREE && VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::RET)
-        {
-            auto R2 = VirtualMachineStack.top();
+        // if (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::FREE && VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::RET)
+        // {
+        auto R2 = VirtualMachineStack.top();
 
+        VirtualMachineStack.pop();
+
+        auto R1 = (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::NEG) ? VirtualMachineStack.top() : StackDataType(VirtualMachineStack.top().Type, static_cast<RealType>(0.0));
+
+        if (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::NEG)
             VirtualMachineStack.pop();
 
-            auto R1 = (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::NEG) ? VirtualMachineStack.top() : StackDataType(VirtualMachineStack.top().Type, static_cast<RealType>(0.0));
-
-            if (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::NEG)
-                VirtualMachineStack.pop();
-
-            UnsignedInt TypeIndex = 0;
-            boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { PerformOperationForType<T>(VirtualCodeCommandToExecute, R1, R2, VirtualCommandDataTypeList[TypeIndex++]); } );
-        }
-        else
-        {
-            if (VirtualCodeCommandToExecute.Operation == VirtualCommandOperationType::FREE)
-                FreeMemoryForFunctionOnStack(VirtualCodeCommandToExecute);
-            else
-            if (VirtualCodeCommandToExecute.Operation == VirtualCommandOperationType::RET)
-                ReturnFromFunction(VirtualCodeCommandToExecute);
-        }
+        UnsignedInt TypeIndex = 0;
+        boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { PerformOperationForType<T>(VirtualCodeCommandToExecute, R1, R2, VirtualCommandDataTypeList[TypeIndex++]); } );
+        // }
+        // else
+        // {
+        //     if (VirtualCodeCommandToExecute.Operation == VirtualCommandOperationType::FREE)
+        //         FreeMemoryForFunctionOnStack(VirtualCodeCommandToExecute);
+        //     else
+        //     if (VirtualCodeCommandToExecute.Operation == VirtualCommandOperationType::RET)
+        //         ReturnFromFunction(VirtualCodeCommandToExecute);
+        // }
     }
 
 private:
@@ -431,7 +429,6 @@ private:
             RunningVirtualCommandIndex = VirtualMachineFunctionCallAddressesStack.top().Data.UnsignedLongIntType;
             VirtualMachineFunctionCallAddressesStack.pop();
             IncrementRunningVirtualCommandIndex = false;
-            LastExecutedVirtualCommandIsReturnFromFunctionBool = true;
         }
         else
         {
@@ -558,7 +555,9 @@ private:
                 case VirtualCommandName::LDP: PrintDebugInfo("LDP", VirtualCodeCommandToExecute); GeneralSaveValueFromParametersListToVariable(VirtualCodeCommandToExecute); break;
 
                 case VirtualCommandName::GET: PrintDebugInfo("GET", VirtualCodeCommandToExecute); GetMemoryForFunctionOnStack(VirtualCodeCommandToExecute); break;
+                case VirtualCommandName::FREE: PrintDebugInfo("FREE", VirtualCodeCommandToExecute); FreeMemoryForFunctionOnStack(VirtualCodeCommandToExecute); break;
                 case VirtualCommandName::CALL: PrintDebugInfo("CALL", VirtualCodeCommandToExecute); CallFunction(VirtualCodeCommandToExecute); break;
+                case VirtualCommandName::RET: PrintDebugInfo("RET", VirtualCodeCommandToExecute); ReturnFromFunction(VirtualCodeCommandToExecute); break;
                 case VirtualCommandName::VIRTRET: PrintDebugInfo("VIRTRET", VirtualCodeCommandToExecute); FreeMemoryForFunctionOnStack(VirtualCodeCommandToExecute); break;
 
                 case VirtualCommandName::JMP: PrintDebugInfo("JMP", VirtualCodeCommandToExecute); Jump(VirtualCodeCommandToExecute); break;
@@ -611,7 +610,6 @@ private:
     void PrintCommandData(const char* CommandName, const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
         cout << VirtualCodeCommandToExecute.LabelAddress << ": " << CommandName << " OPR = " << static_cast<SignedInt>(VirtualCodeCommandToExecute.Operation) << " Type = " << static_cast<SignedInt>(VirtualCodeCommandToExecute.Type) << " Value = " << VirtualCodeCommandToExecute.Value << " TargetAddress = " << VirtualCodeCommandToExecute.TargetAddress << " Kind = " << VirtualCodeCommandToExecute.Kind << " Level = " << VirtualCodeCommandToExecute.Level << " Index = " << VirtualCodeCommandToExecute.Index << " Inside = " << VirtualCodeCommandToExecute.Inside << " ";
-        PrintFunctionReturnValue();
     }
 
     template <class T>
@@ -625,19 +623,6 @@ private:
     {
         UnsignedInt TypeIndex = 0;
         boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { PrintTopOfStackProperType<T>(VirtualCommandDataTypeList[TypeIndex++]); });
-    }
-
-    template <class T>
-    void PrintFunctionReturnValueForType(const VirtualCommandDataType VirtualCommandDataTypeParam)
-    {
-        if (FunctionReturnValue.Type == VirtualCommandDataTypeParam)
-            cout <<  "FRVT = " << static_cast<SignedInt>(FunctionReturnValue.Type) << " FRV = " << static_cast<T>(*reinterpret_cast<T*>(&FunctionReturnValue.Data)) << " ";
-    }
-
-    void PrintFunctionReturnValue()
-    {
-        UnsignedInt TypeIndex = 0;
-        boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { PrintFunctionReturnValueForType<T>(VirtualCommandDataTypeList[TypeIndex++]); });
     }
 
 public:
