@@ -209,7 +209,7 @@ UnsignedInt ParserToVirtualCodeGenerator::GetSizeForTokenType(TokenSymbol TokenS
     if (TypeToGetSize)
         return TypeToGetSize->Length;
     else
-        return 4;
+        return SizeOfPointer;
 }
 
 shared_ptr<VariableDefinition> ParserToVirtualCodeGenerator::CreateVariable(UnsignedInt Address, UnsignedInt Kind) const
@@ -260,7 +260,6 @@ void ParserToVirtualCodeGenerator::GenerateAssignOperation(const VirtualCommandO
         GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands].Kind = GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex2].Kind;
         GeneratedVirtualCode[NumberOfGeneratedVirtualCodeCommands].Level = GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex2].Level;
         GenerateVirtualCodeCommand(VirtualCommandName::SVV, static_cast<SignedInt>(NewLastTokenSymbolType = static_cast<TokenSymbol>(GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex2].Type)), 0, GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex2].TargetAddress);
-        //GenerateVirtualCodeCommand(VirtualCommandName::SVV, NewLastTokenSymbolType = static_cast<TokenSymbol>(GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex2].Type), 0, GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex2].TargetAddress);
     }
     else
     if (GeneratedVirtualCode[GeneratedVirtualCodeCommandIndex2].CommandName == VirtualCommandName::LDVFPTR)
@@ -674,7 +673,7 @@ void ParserToVirtualCodeGenerator::PointerExpressionSum(const UnsignedInt& Opera
             PrintError("1 right paren in pointer expression is not closed");
         UnsignedInt SizeToMultiply = 0;
         if (InsidePointerExpression >= 2)
-            SizeToMultiply = 4;
+            SizeToMultiply = SizeOfPointer;
         if (InsidePointerExpression == 1)
         {
             UnsignedInt VariableNumericCode = VariablePointer->Type->TypeNumericCode - VariablePointer->Type->Pointer * ConstantForPointerToMultiply;
@@ -823,7 +822,7 @@ void ParserToVirtualCodeGenerator::ExpressionOneArgumentMul()
     if (GeneratedLexicalAnalysisTokens[GeneratedLexicalAnalysisTokenPosition + 1].Symbol == TokenSymbol::IdentifierSym)
         ExpressionOneArgumentIdentifier();
     else
-    if (GeneratedLexicalAnalysisTokens[GeneratedLexicalAnalysisTokenPosition + 1].Symbol == TokenSymbol::LeftParSym) //*(*(p+wyrazenie*4)+wyrazenie*size)
+    if (GeneratedLexicalAnalysisTokens[GeneratedLexicalAnalysisTokenPosition + 1].Symbol == TokenSymbol::LeftParSym) //*(*(p+wyrazenie*SizeOfPointer)+wyrazenie*size)
         ExpressionOneArgumentMulLeftPar();
 }
 
@@ -1733,7 +1732,7 @@ void ParserToVirtualCodeGenerator::InstructionNew()
         }
         if (Pointer)
         {
-            GenerateVirtualCodeCommand(VirtualCommandName::LDC, static_cast<SignedInt>(VirtualCommandDataType::UNSIGNED_LONG_INT_TYPE), 4, 0);
+            GenerateVirtualCodeCommand(VirtualCommandName::LDC, static_cast<SignedInt>(VirtualCommandDataType::UNSIGNED_LONG_INT_TYPE), SizeOfPointer, 0);
             NewLastTokenSymbolType = TokenSymbol::SignedIntSym;
         }
         if (!Pointer)
@@ -1974,7 +1973,7 @@ void ParserToVirtualCodeGenerator::ParseClassDefinition()
     if (GeneratedLexicalAnalysisTokens[GeneratedLexicalAnalysisTokenPosition].Symbol == TokenSymbol::IdentifierSym)
     {
         printf("CLASS ", GeneratedLexicalAnalysisTokens[GeneratedLexicalAnalysisTokenPosition].Symbol);
-        PointerToClassStack = 4;
+        PointerToClassStack = SizeOfPointer;
         InsideClassesNestedLevel++;
         VariableType = CLASS_LEVEL;
         UnsignedInt ClassTypeCode = (UnsignedInt)GeneratedLexicalAnalysisTokens[GeneratedLexicalAnalysisTokenPosition].Type;
@@ -1992,7 +1991,7 @@ void ParserToVirtualCodeGenerator::ParseClassDefinition()
             //shared_ptr<ClassDefinition> NewClassPointer = make_shared<ClassDefinition>();
             const auto NewClassPointer = make_shared<ClassDefinition>();
             InitializeType(static_cast<TokenSymbol>(ClassTypeCode), static_cast<VirtualCommandDataType>(CLASS_LEVEL), PointerToClassStack, 0, NewClassPointer, nullptr, nullptr);
-            //dxc - min dlugosc = 4 na poczatku dla "this" , 0 - liczba gwiazdek
+            //dxc - min dlugosc = SizeOfPointer na poczatku dla "this" , 0 - liczba gwiazdek
             ProgramClassPointer = NewClassPointer;
             ProgramClassPointer->ClassNameString = ClassName;
         }
@@ -2225,7 +2224,7 @@ void ParserToVirtualCodeGenerator::GeneratePushFunctionParameters(const Unsigned
             if ((GeneratedVirtualCode[LocalGeneratedVirtualCodeCommandIndex].CommandName == VirtualCommandName::LDV || GeneratedVirtualCode[LocalGeneratedVirtualCodeCommandIndex].CommandName == VirtualCommandName::SVV) && GeneratedVirtualCode[LocalGeneratedVirtualCodeCommandIndex].Kind == 1)
             {
                 const auto DataType = FindType(static_cast<UnsignedInt>(GetTokenSymbolForType(GeneratedVirtualCode[LocalGeneratedVirtualCodeCommandIndex].Type)));
-                GeneratedVirtualCode[LocalGeneratedVirtualCodeCommandIndex].TargetAddress = (SumOfParametersLength - (GeneratedVirtualCode[LocalGeneratedVirtualCodeCommandIndex].TargetAddress - 4)) + PointerToFunctionStack - DataType->Length;
+                GeneratedVirtualCode[LocalGeneratedVirtualCodeCommandIndex].TargetAddress = (SumOfParametersLength - (GeneratedVirtualCode[LocalGeneratedVirtualCodeCommandIndex].TargetAddress - SizeOfPointer)) + PointerToFunctionStack - DataType->Length;
             }
 }
 
@@ -2265,7 +2264,7 @@ void ParserToVirtualCodeGenerator::TypeSpecifier()
         TokenSymbolType = static_cast<TokenSymbol>(static_cast<UnsignedInt>(TokenSymbolType) + static_cast<UnsignedInt>(Pointer * ConstantForPointerToMultiply));
         if (Pointer)
             if (FindType(static_cast<UnsignedInt>(TokenSymbolType)) == nullptr)
-                InitializeType(TokenSymbolType, static_cast<VirtualCommandDataType>(TokenSymbolType), 4, Pointer, nullptr, nullptr, nullptr);
+                InitializeType(TokenSymbolType, static_cast<VirtualCommandDataType>(TokenSymbolType), SizeOfPointer, Pointer, nullptr, nullptr, nullptr);
 
         if (GeneratedLexicalAnalysisTokens[GeneratedLexicalAnalysisTokenPosition].Symbol == TokenSymbol::BitAndSym)
         {
@@ -2579,14 +2578,13 @@ void ParserToVirtualCodeGenerator::EnterFunctionIdentifier()
         auto FunctionNumericCode = (UnsignedInt)GeneratedLexicalAnalysisTokens[GeneratedLexicalAnalysisTokenPosition - 1].Type;
         FunctionDeclarationParameters.clear();
         FunctionDeclarationParameters.emplace_back(FunctionNumericCode);
-        UnsignedInt log_public = true;
-
-        UnsignedInt kod_main = false;
+        bool ThisIsLogPublicCode = true;
+        bool ThisIsMainFunctionBool = false;
 
         auto FunctionMapCode = NumericCodeToStringSymbolsMap.find(FunctionNumericCode);
         auto FunctionStringName = FunctionMapCode->second;
         if (FunctionStringName == "main")
-            kod_main = true;
+            ThisIsMainFunctionBool = true;
 
         GetNextTokenSymbol();
         TypeOfVariableDeclaration = 1;
@@ -2621,11 +2619,11 @@ void ParserToVirtualCodeGenerator::EnterFunctionIdentifier()
         else
             PrintError("right paren expected");
 
-        GenerateFunctionIdentifierCode(FunctionStringName, log_public, kod_main);
+        GenerateFunctionIdentifierCode(FunctionStringName, ThisIsLogPublicCode, ThisIsMainFunctionBool);
     }
 }
 
-void ParserToVirtualCodeGenerator::GenerateFunctionIdentifierCode(const string& StringCode, UnsignedInt PublicCode, UnsignedInt MainCode)
+void ParserToVirtualCodeGenerator::GenerateFunctionIdentifierCode(const string& StringCode, bool PublicCodeBool, const bool MainFunctionBool)
 {
     if (GeneratedLexicalAnalysisTokens[GeneratedLexicalAnalysisTokenPosition].Symbol == TokenSymbol::SemicolonSym)
     {
@@ -2637,18 +2635,18 @@ void ParserToVirtualCodeGenerator::GenerateFunctionIdentifierCode(const string& 
         //NIE delete funptr bo deklaracja musi przetrwac do wykrycia ciala !
         //lub dla Linkera ?
         ProgramFunctionPointer = nullptr; //by nie generowal gen( opr,0,END=-1 );
-        PublicCode = false; //ze to tylko deklaracja
+        PublicCodeBool = false; //ze to tylko deklaracja
     }
     else
-    if (MainCode)
+    if (MainFunctionBool)
         StartAddressOfProgram = ProgramFunctionPointer->VirtualAddress;
 
-    if (PublicCode)
+    if (PublicCodeBool)
     {
         PublicData.emplace_back(StringCode, NumberOfFunctionsOverloaded);
         if (FunctionDeclarationParameters.size() <= NumberOfProperFastRegisters) //num_of_par_fun = NumberOfProperFastRegisters gdy 6 parametrow
         {
-            UnsignedInt StackOffset = 4; //na starcie dx=4
+            UnsignedInt StackOffset = SizeOfPointer; //na starcie dx=SizeOfPointer
             for (UnsignedInt FunctionParameterIndex = 1; FunctionParameterIndex < FunctionDeclarationParameters.size(); FunctionParameterIndex++)
             {
                 //te typy parametrow to problem :

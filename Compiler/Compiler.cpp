@@ -30,6 +30,8 @@ int main(int argc, char* argv[])
     ParserToVirtualCodeGenerator ParserToVirtualCodeGeneratorObject(LexicalAnalysisTokensGeneratorObject.GeneratedLexicalAnalysisTokens, LexicalAnalysisTokensGeneratorObject.NumericCodeToStringSymbolsMap);
     ParserToVirtualCodeGeneratorObject.ParserToVirtualCodeGenerationUnit();
 
+    printf("StartAddressOfProgram = %lu", ParserToVirtualCodeGeneratorObject.StartAddressOfProgram);
+
     if (std::string(argv[1]) == "-o")
         InlineFunctionsGenerator::MakeInline(3, ParserToVirtualCodeGeneratorObject.NumberOfGeneratedVirtualCodeCommands, ParserToVirtualCodeGeneratorObject.GeneratedVirtualCode);
 
@@ -46,7 +48,7 @@ int main(int argc, char* argv[])
     }
 
     if (std::string(argv[3]) == "-e")
-        ExecuteProgramOnVirtualMachine(ParserToVirtualCodeGeneratorObject.GeneratedVirtualCode, 28);
+        ExecuteProgramOnVirtualMachine(ParserToVirtualCodeGeneratorObject.GeneratedVirtualCode, ParserToVirtualCodeGeneratorObject.StartAddressOfProgram);
 
     //TestVirtualMachine();
 

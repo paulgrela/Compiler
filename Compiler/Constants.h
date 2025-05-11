@@ -4,6 +4,8 @@
 
 #include "Types.h"
 
+constexpr UnsignedInt SizeOfPointer = 4;
+
 constexpr UnsignedInt MaximalNumberOfCharactersInNumber = 14;
 
 constexpr UnsignedInt ConstantSymbolForLabelInlineToMultiply = 1E+6;

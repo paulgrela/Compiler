@@ -155,7 +155,7 @@ public:
     void ParserToVirtualCodeGenerationUnit();
     void EnterFunctionIdentifier();
     void SearchProperFunctionAccordingToFoundParametersTypes(std::shared_ptr<FunctionDefinition>& FunctionToCheckPointer, UnsignedInt FunctionNumericCode);
-    void GenerateFunctionIdentifierCode(const std::string& StringCode, UnsignedInt PublicCode, UnsignedInt MainCode);
+    void GenerateFunctionIdentifierCode(const std::string& StringCode, bool PublicCodeBool, bool MainFunctionBool);
     [[nodiscard]] bool CompareFunctionParameters(const std::shared_ptr<FunctionDefinition>& FunctionPointer) const;
 public:
     [[nodiscard]] std::shared_ptr<VariableDefinition> CreateVariable(UnsignedInt Address, UnsignedInt Kind) const;

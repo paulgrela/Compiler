@@ -170,8 +170,6 @@ private:
 
     void PerformOperation(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
-        // if (VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::FREE && VirtualCodeCommandToExecute.Operation != VirtualCommandOperationType::RET)
-        // {
         auto R2 = VirtualMachineStack.top();
 
         VirtualMachineStack.pop();
@@ -183,15 +181,6 @@ private:
 
         UnsignedInt TypeIndex = 0;
         boost::mpl::for_each<ValidTypes>([&]<typename T>(T TypeArg) { PerformOperationForType<T>(VirtualCodeCommandToExecute, R1, R2, VirtualCommandDataTypeList[TypeIndex++]); } );
-        // }
-        // else
-        // {
-        //     if (VirtualCodeCommandToExecute.Operation == VirtualCommandOperationType::FREE)
-        //         FreeMemoryForFunctionOnStack(VirtualCodeCommandToExecute);
-        //     else
-        //     if (VirtualCodeCommandToExecute.Operation == VirtualCommandOperationType::RET)
-        //         ReturnFromFunction(VirtualCodeCommandToExecute);
-        // }
     }
 
 private:
@@ -424,16 +413,19 @@ private:
 
     void ReturnFromFunction(const VirtualCodeCommand& VirtualCodeCommandToExecute)
     {
-        if (VirtualMachineFunctionCallAddressesStack.empty() == false)
+        if (ProgramCodeCommandsList[RunningVirtualCommandIndex - 1].CommandName != VirtualCommandName::VIRTRET)
         {
-            RunningVirtualCommandIndex = VirtualMachineFunctionCallAddressesStack.top().Data.UnsignedLongIntType;
-            VirtualMachineFunctionCallAddressesStack.pop();
-            IncrementRunningVirtualCommandIndex = false;
-        }
-        else
-        {
-            cout << "END OF PROGRAM" << endl;
-            ProgramRunning = false;
+            if (VirtualMachineFunctionCallAddressesStack.empty() == false)
+            {
+                RunningVirtualCommandIndex = VirtualMachineFunctionCallAddressesStack.top().Data.UnsignedLongIntType;
+                VirtualMachineFunctionCallAddressesStack.pop();
+                IncrementRunningVirtualCommandIndex = false;
+            }
+            else
+            {
+                cout << "END OF PROGRAM" << endl;
+                ProgramRunning = false;
+            }
         }
     }
 
